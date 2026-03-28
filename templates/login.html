@@ -1,0 +1,80 @@
+{% include "header.html" %}
+
+<div class="container d-flex justify-content-center align-items-center"
+     style="min-height: 85vh;">
+
+  <div class="col-md-5 col-lg-4">
+
+    <!-- Login Card -->
+    <div class="card border-0 shadow-lg">
+      <div class="card-body p-4">
+
+        <!-- Title (same structure as register) -->
+        <div class="text-center mb-4">
+          <h3 class="fw-bold mb-1">
+            Login to DealDrop
+          </h3>
+
+          <h5 class="text-success text-center">
+            Access Your Account
+          </h5>
+
+          <p class="text-muted small mb-0">
+            Continue to explore deals or manage inventory.
+          </p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} py-2 small">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- FORM (Bootstrap manual) -->
+        <form method="POST">
+          {{ form.hidden_tag() }}
+
+          <div class="mb-3">
+            {{ form.email.label(class="form-label") }}
+            {{ form.email(class="form-control", placeholder="Enter your email") }}
+          </div>
+
+          <div class="mb-3">
+            {{ form.password.label(class="form-label") }}
+            {{ form.password(class="form-control", placeholder="Enter your password") }}
+          </div>
+
+          <div class="d-grid">
+            {{ form.submit(class="btn btn-success") }}
+          </div>
+        </form>
+
+        <hr class="my-3">
+
+        <!-- Register Options (same style as register page) -->
+        <p class="text-center small mb-1">
+          New here?
+        </p>
+
+        <div class="text-center">
+          <a href="{{ url_for('register', role='customer') }}" class="fw-semibold me-2">
+            Customer Register
+          </a>
+          |
+          <a href="{{ url_for('register', role='retailer') }}" class="fw-semibold ms-2">
+            Retailer Register
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% include "footer.html" %}

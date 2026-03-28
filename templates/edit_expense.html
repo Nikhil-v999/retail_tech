@@ -1,0 +1,27 @@
+{% include "header.html" %}
+{% block content %}
+{% from "bootstrap5/form.html" import render_form %}
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<div class="col-lg-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Edit Expense</h5>
+                </div>
+                <div class="card-body">
+                <!--form is there for details -->
+                     {{render_form(form, novalidate=True, button_map={"submit": "primary"}) }}
+
+                </div>
+            </div>
+        </div>
+
+
+
+{% endblock %}
+{% include "footer.html" %}

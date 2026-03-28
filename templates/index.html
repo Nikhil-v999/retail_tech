@@ -1,0 +1,92 @@
+
+{% include "header.html" %}
+
+<!-- HERO SECTION -->
+<header class="masthead" style="background: linear-gradient(135deg, #0f172a, #1e293b); color:white;">
+    <div class="container text-center py-5">
+        <h1 class="text-uppercase fw-bold">DealDrop ⚡</h1>
+        <h2 class="fw-light mt-3">
+            Turn Unsold Inventory into <span style="color:#22c55e;">Instant Sales</span>
+        </h2>
+
+        <p class="mt-3" style="color:#cbd5f5;">
+            Real-time hyperlocal flash deals connecting nearby customers with local retailers.
+        </p>
+
+        <div class="mt-4">
+            <a href="{{ url_for('login', role='customer') }}" class="btn btn-success btn-lg me-3">
+                Explore Deals
+            </a>
+            <a href="{{ url_for('login', role='retailer') }}" class="btn btn-outline-light btn-lg">
+                Sell Inventory
+            </a>
+        </div>
+    </div>
+</header>
+
+
+<!-- HOW IT WORKS -->
+<section class="page-section" style="background:#111827; color:white;">
+    <div class="container text-center">
+        <h2 class="text-uppercase mb-5">How It Works</h2>
+
+        <div class="row">
+
+            <div class="col-md-4">
+                <h4>1. Retailer Adds Product</h4>
+                <p style="color:#9ca3af;">
+                    Upload unsold or near-expiry items with price & stock.
+                </p>
+            </div>
+
+            <div class="col-md-4">
+                <h4>2. Dynamic Pricing Activates</h4>
+                <p style="color:#9ca3af;">
+                    Prices drop automatically as expiry approaches.
+                </p>
+            </div>
+
+            <div class="col-md-4">
+                <h4>3. Customers Grab Deals</h4>
+                <p style="color:#9ca3af;">
+                    Nearby users see real-time deals and buy instantly.
+                </p>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+<!-- FEATURES -->
+<section class="page-section bg-light">
+    <div class="container text-center">
+        <h2 class="text-uppercase mb-5">Why DealDrop?</h2>
+
+        <div class="row">
+
+            <div class="col-md-3">
+                <h5>⚡ Dynamic Pricing</h5>
+                <p class="text-muted">Auto-adjusts prices based on time & demand.</p>
+            </div>
+
+            <div class="col-md-3">
+                <h5>📍 Hyperlocal Deals</h5>
+                <p class="text-muted">Discover deals near your location instantly.</p>
+            </div>
+
+            <div class="col-md-3">
+                <h5>⏳ Urgency Engine</h5>
+                <p class="text-muted">Countdown timers trigger faster purchases.</p>
+            </div>
+
+            <div class="col-md-3">
+                <h5>📊 Smart Optimization</h5>
+                <p class="text-muted">Learns from user behavior to improve pricing.</p>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+{% include "footer.html" %}

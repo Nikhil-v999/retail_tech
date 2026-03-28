@@ -1,0 +1,76 @@
+
+
+{% include "header.html" %}
+{% from "bootstrap5/form.html" import render_form %}
+
+<div class="container d-flex justify-content-center align-items-center"
+     style="min-height: 85vh;">
+
+  <div class="col-md-5 col-lg-4">
+
+    <div class="card border-0 shadow-lg">
+      <div class="card-body p-4">
+
+        <!-- Title -->
+        <div class="text-center mb-4">
+          <h3 class="fw-bold mb-1">
+            {{ role|capitalize }} Registration
+          </h3>
+          <h5 class="text-success text-center">
+    {{ role|capitalize }} Account
+</h5>
+          <p class="text-muted small mb-0">
+            {% if role == "retailer" %}
+              Start selling your inventory instantly.
+            {% else %}
+              Start saving money with smart deals.
+            {% endif %}
+          </p>
+        </div>
+
+        <!-- Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} py-2 small">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- Form -->
+        {{ render_form(form, novalidate=True, button_map={"submit": "success"}) }}
+
+        <hr class="my-3">
+
+        <!-- Switch role -->
+        <p class="text-center small mb-1">
+          {% if role == "retailer" %}
+            Want to explore deals?
+            <a href="{{ url_for('register', role='customer') }}" class="fw-semibold">
+              Register as Customer
+            </a>
+          {% else %}
+            Want to sell inventory?
+            <a href="{{ url_for('register', role='retailer') }}" class="fw-semibold">
+              Register as Retailer
+            </a>
+          {% endif %}
+        </p>
+
+        <!-- Login -->
+        <p class="text-center small mb-0">
+          Already have an account?
+          <a href="{{ url_for('login', role=role) }}" class="fw-semibold">
+            Log in
+          </a>
+        </p>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% include "footer.html" %}
