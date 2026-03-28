@@ -1,0 +1,483 @@
+{% include "header.html" %}
+<style>
+  body { background: #0a0f1e; }
+
+  .customer-wrap {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 36px 24px;
+  }
+
+  /* Header */
+  .customer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 28px;
+  }
+
+  .customer-header h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin: 0;
+  }
+
+  .customer-header p {
+    color: #64748b;
+    font-size: 14px;
+    margin: 4px 0 0;
+  }
+
+  .live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(34,197,94,0.1);
+    border: 1px solid rgba(34,197,94,0.3);
+    color: #22c55e;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .live-badge::before {
+    content: '';
+    width: 7px; height: 7px;
+    background: #22c55e;
+    border-radius: 50%;
+    animation: blink 1.2s infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+    50% { opacity: 0.4; box-shadow: 0 0 0 4px rgba(34,197,94,0); }
+  }
+
+  /* Filter bar */
+  .filter-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    background: #0d1321;
+    border: 1px solid #1e2d40;
+    color: #94a3b8;
+    padding: 7px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+
+  .filter-btn:hover, .filter-btn.active {
+    background: rgba(34,197,94,0.1);
+    border-color: #22c55e;
+    color: #22c55e;
+  }
+
+  /* Deal grid */
+  .deals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+  /* Deal card */
+  .deal-card {
+    background: #0d1321;
+    border: 1px solid #1e2d40;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    position: relative;
+  }
+
+  .deal-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    border-color: #22c55e;
+  }
+
+  /* Urgency top bar */
+  .urgency-bar {
+    height: 4px;
+    width: 100%;
+  }
+  .urgency-bar.low { background: #22c55e; }
+  .urgency-bar.medium { background: #f59e0b; }
+  .urgency-bar.high { background: #f97316; }
+  .urgency-bar.critical { background: linear-gradient(90deg, #ef4444, #f97316); animation: urgency-pulse 1s infinite; }
+
+  @keyframes urgency-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  /* Image placeholder */
+  .card-img {
+    height: 140px;
+    background: linear-gradient(135deg, #111827, #1e2d40);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 52px;
+    position: relative;
+  }
+
+  .discount-chip {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #22c55e;
+    color: #0a0f1e;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 9px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  .discount-chip.critical-chip {
+    background: #ef4444;
+    color: white;
+    animation: urgency-pulse 1s infinite;
+  }
+
+  .stock-chip {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.7);
+    color: #cbd5e1;
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 20px;
+  }
+
+  .stock-chip.critical-stock {
+    background: rgba(239,68,68,0.3);
+    color: #fca5a5;
+  }
+
+  /* Card body */
+  .card-body-custom {
+    padding: 16px;
+  }
+
+  .card-category {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #4b6584;
+    margin-bottom: 6px;
+  }
+
+  .card-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-store {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 12px;
+  }
+
+  .pricing-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .price-now {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #22c55e;
+  }
+
+  .price-was {
+    font-size: 13px;
+    color: #64748b;
+    text-decoration: line-through;
+  }
+
+  .savings-text {
+    font-size: 12px;
+    color: #22c55e;
+    margin-left: auto;
+    font-weight: 600;
+  }
+
+  /* Countdown timer */
+  .countdown-box {
+    background: #111827;
+    border: 1px solid #1e2d40;
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .time-unit {
+    text-align: center;
+  }
+
+  .time-val {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #f1f5f9;
+    display: block;
+    line-height: 1;
+  }
+
+  .countdown-box.urgent .time-val {
+    color: #ef4444;
+  }
+
+  .time-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #4b6584;
+    display: block;
+    margin-top: 2px;
+  }
+
+  .time-sep {
+    font-size: 20px;
+    color: #4b6584;
+    align-self: center;
+    padding-bottom: 6px;
+  }
+
+  /* Grab button */
+  .btn-grab {
+    width: 100%;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    border: none;
+    color: #0a0f1e;
+    font-weight: 800;
+    font-size: 14px;
+    padding: 11px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-grab:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(34,197,94,0.3);
+  }
+
+  .btn-grab:active { transform: translateY(0); }
+
+  /* Empty state */
+  .empty-deals {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 80px 20px;
+    color: #4b6584;
+  }
+
+  .empty-deals .emoji { font-size: 56px; display: block; margin-bottom: 16px; }
+  .empty-deals h3 { color: #64748b; font-size: 18px; }
+  .empty-deals p { font-size: 14px; }
+
+  /* Section label */
+  .section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #4b6584;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #1e2d40;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap');
+</style>
+
+<div class="customer-wrap">
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} py-2 small mb-3" style="border-radius:8px;">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- Header -->
+  <div class="customer-header">
+    <div>
+      <h1>⚡ Flash Deals Near You</h1>
+      <p>Hey {{ current_user.name }}! Grab these deals before they expire.</p>
+    </div>
+    <div class="live-badge">Live Deals</div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <span class="filter-btn active">🔥 All Deals</span>
+    <span class="filter-btn">🍎 Food</span>
+    <span class="filter-btn">🥛 Dairy</span>
+    <span class="filter-btn">🧃 Beverages</span>
+    <span class="filter-btn">🍿 Snacks</span>
+    <span class="filter-btn">📱 Electronics</span>
+  </div>
+
+  <!-- Urgency section: critical -->
+  {% set critical_deals = products | selectattr('urgency_level', 'equalto', 'critical') | list %}
+  {% if critical_deals %}
+  <div class="section-label">🔴 Expiring in under 6 hours</div>
+  {% endif %}
+
+  <!-- Deal Grid -->
+  <div class="deals-grid">
+
+    {% if products %}
+      {% for p in products %}
+
+      {% set emoji_map = {
+        'food': '🍎', 'dairy': '🥛', 'beverages': '🧃',
+        'snacks': '🍿', 'personal_care': '🧴', 'household': '🏠',
+        'electronics': '📱', 'clothing': '👕', 'other': '📦'
+      } %}
+      {% set cat_emoji = emoji_map.get(p.category, '📦') %}
+
+      <div class="deal-card">
+        <div class="urgency-bar {{ p.urgency_level }}"></div>
+
+        <!-- Image / Emoji placeholder -->
+        <div class="card-img">
+          {{ cat_emoji }}
+          <span class="discount-chip {% if p.urgency_level == 'critical' %}critical-chip{% endif %}">
+            {{ p.discount_percent }}% OFF
+          </span>
+          <span class="stock-chip {% if p.stock <= 3 %}critical-stock{% endif %}">
+            {{ p.stock }} left
+          </span>
+        </div>
+
+        <div class="card-body-custom">
+          <div class="card-category">{{ p.category }}</div>
+          <div class="card-title">{{ p.name }}</div>
+          <div class="card-store">📍 {{ p.retailer.name }} · {{ p.retailer.city or 'Nearby' }}</div>
+
+          <!-- Pricing -->
+          <div class="pricing-row">
+            <span class="price-now">₹{{ "%.0f"|format(p.current_price) }}</span>
+            <span class="price-was">₹{{ "%.0f"|format(p.original_price) }}</span>
+            <span class="savings-text">Save ₹{{ "%.0f"|format(p.original_price - p.current_price) }}</span>
+          </div>
+
+          <!-- Countdown Timer -->
+          <div class="countdown-box {% if p.urgency_level in ['high', 'critical'] %}urgent{% endif %}"
+               data-expiry="{{ p.expiry_date.isoformat() }}"
+               data-id="{{ p.id }}">
+            <div class="time-unit">
+              <span class="time-val" id="h-{{ p.id }}">--</span>
+              <span class="time-label">Hours</span>
+            </div>
+            <span class="time-sep">:</span>
+            <div class="time-unit">
+              <span class="time-val" id="m-{{ p.id }}">--</span>
+              <span class="time-label">Mins</span>
+            </div>
+            <span class="time-sep">:</span>
+            <div class="time-unit">
+              <span class="time-val" id="s-{{ p.id }}">--</span>
+              <span class="time-label">Secs</span>
+            </div>
+          </div>
+
+          <!-- Grab Button -->
+          <form method="POST" action="{{ url_for('grab_deal', product_id=p.id) }}">
+            <button type="submit" class="btn-grab">
+              ⚡ Grab This Deal
+            </button>
+          </form>
+
+        </div>
+      </div>
+
+      {% endfor %}
+
+    {% else %}
+    <div class="empty-deals">
+      <span class="emoji">🏪</span>
+      <h3>No deals available right now</h3>
+      <p>Check back soon — retailers are adding new flash deals daily!</p>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<!-- Countdown Timer Script -->
+<script>
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function updateCountdowns() {
+    document.querySelectorAll('.countdown-box[data-expiry]').forEach(box => {
+      const id = box.dataset.id;
+      const expiry = new Date(box.dataset.expiry + 'Z');  // treat as UTC
+      const now = new Date();
+      const diff = expiry - now;
+
+      if (diff <= 0) {
+        document.getElementById('h-' + id).textContent = '00';
+        document.getElementById('m-' + id).textContent = '00';
+        document.getElementById('s-' + id).textContent = '00';
+        box.classList.add('urgent');
+        return;
+      }
+
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+
+      document.getElementById('h-' + id).textContent = pad(h);
+      document.getElementById('m-' + id).textContent = pad(m);
+      document.getElementById('s-' + id).textContent = pad(s);
+
+      // Make urgent if under 6 hours
+      if (h < 6) box.classList.add('urgent');
+    });
+  }
+
+  updateCountdowns();
+  setInterval(updateCountdowns, 1000);
+</script>
+
+{% include "footer.html" %}
