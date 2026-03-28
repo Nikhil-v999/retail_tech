@@ -11682,3 +11682,304 @@ a:hover {
     transform: translateY(-5px);
     transition: 0.3s;
 }
+
+body {
+    background-color: #f8f9fa !important;
+    color: #212529;
+}
+.card {
+    background-color: white !important;
+    border-radius: 10px;
+}
+#mainNav {
+    background-color: #212529 !important; /* dark grey like Spensly */
+}
+
+.form-control {
+    background-color: white !important;
+    color: #212529 !important;
+}
+/* LOGIN PAGE BACKGROUND */
+.login-page {
+    min-height: 85vh;
+    background: #f8f9fa;   /* clean light background */
+}
+
+/* CENTER CARD LOOK */
+.login-page .card {
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+
+/* FORCE CLEAN LOGIN PAGE */
+.login-page {
+    min-height: 100vh;
+    background: #f4f6f9 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+body {
+    background: #f4f6f9 !important;
+}
+.card {
+    border-radius: 12px;
+    background: #ffffff !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+.card h3 {
+    color: #212529 !important;
+}
+
+.card h5 {
+    color: #198754 !important;
+}
+
+.card p {
+    color: #6c757d !important;
+}
+.col-md-5 {
+    max-width: 400px;
+}
+body {
+    font-family: 'Poppins', sans-serif;
+}
+
+.card h3 {
+    font-weight: 700;
+    font-size: 28px;
+    color: #1f2937;
+    letter-spacing: -0.5px;
+}
+
+.card h5 {
+    font-weight: 600;
+    color: #16a34a;
+}
+.card p {
+    font-size: 14px;
+    color: #6b7280;
+}
+.form-label {
+    font-weight: 500;
+    color: #374151;
+}
+.form-control {
+    border-radius: 8px;
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: #16a34a;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+}
+.btn-success {
+    background: #16a34a;
+    border: none;
+    font-weight: 600;
+    padding: 10px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-success:hover {
+    background: #15803d;
+    transform: translateY(-1px);
+}
+a {
+    text-decoration: none;
+    font-weight: 500;
+    color: #16a34a;
+    transition: all 0.2s ease;
+}
+
+a:hover {
+    color: #15803d;
+    text-decoration: underline;
+}
+.text-center.small {
+    color: #6b7280;
+    font-size: 13px;
+}
+.card {
+    border-radius: 16px;
+    padding: 10px;
+}
+/* FIND THIS */
+.stat-card {
+    background: #0d1321;
+    border: 1px solid #1e2d40;
+    ...
+}
+
+/* ADD this to force override Bootstrap */
+.stat-card {
+    background: #0d1321 !important;
+    border: 1px solid #1e2d40 !important;
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    color: #f1f5f9 !important;
+}
+
+.stat-card .value {
+    color: #f1f5f9 !important;
+}
+
+.stat-card .label, .stat-card .sub {
+    color: #4b6584 !important;
+}
+/* ============================================
+   DEALDROP DASHBOARD OVERRIDES
+   Must be LAST in file to win specificity war
+   ============================================ */
+
+/* Dark body for dashboard pages */
+body.dashboard-page {
+    background: #0a0f1e !important;
+    color: #e2e8f0 !important;
+}
+
+/* Override the white card that Spensly set */
+body.dashboard-page .card,
+body.dashboard-page .stat-card,
+body.dashboard-page .product-table,
+body.dashboard-page .deal-card {
+    background-color: #0d1321 !important;
+    color: #e2e8f0 !important;
+    border-color: #1e2d40 !important;
+}
+
+/* Stat cards specifically */
+body.dashboard-page .stat-card {
+    background: #0d1321 !important;
+    border: 1px solid #1e2d40 !important;
+    color: #f1f5f9 !important;
+}
+
+body.dashboard-page .stat-card .value {
+    color: #f1f5f9 !important;
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+body.dashboard-page .stat-card .label {
+    color: #4b6584 !important;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+body.dashboard-page .stat-card .sub {
+    color: #64748b !important;
+    font-size: 12px;
+}
+
+/* Sidebar */
+body.dashboard-page .sidebar {
+    background: #0d1321 !important;
+    border-right: 1px solid #1e2d40 !important;
+}
+
+/* Main dashboard area */
+body.dashboard-page .dash-main {
+    background: #0a0f1e !important;
+}
+
+/* Table dark */
+body.dashboard-page .product-table table,
+body.dashboard-page .product-table thead tr,
+body.dashboard-page .product-table tbody tr {
+    background-color: #0d1321 !important;
+    color: #cbd5e1 !important;
+    border-color: #1e2d40 !important;
+}
+
+body.dashboard-page .product-table thead tr {
+    background: #111827 !important;
+}
+
+body.dashboard-page .product-table tbody tr:hover {
+    background: rgba(255,255,255,0.03) !important;
+}
+
+/* Stats color bars stay colored */
+body.dashboard-page .stat-card.green::before { background: #22c55e !important; }
+body.dashboard-page .stat-card.blue::before  { background: #3b82f6 !important; }
+body.dashboard-page .stat-card.yellow::before { background: #f59e0b !important; }
+body.dashboard-page .stat-card.red::before   { background: #ef4444 !important; }
+
+/* Form control dark for add_product */
+body.dashboard-page .form-control,
+body.dashboard-page .form-select {
+    background-color: #111827 !important;
+    border-color: #1e2d40 !important;
+    color: #e2e8f0 !important;
+}
+
+body.dashboard-page .form-control:focus,
+body.dashboard-page .form-select:focus {
+    border-color: #22c55e !important;
+    box-shadow: 0 0 0 3px rgba(34,197,94,0.1) !important;
+}
+
+body.dashboard-page .form-label {
+    color: #94a3b8 !important;
+}
+
+/* form-card for add product page */
+body.dashboard-page .form-card {
+    background: #0d1321 !important;
+    border: 1px solid #1e2d40 !important;
+}
+body {
+  background: #0a0f1e !important;
+  color: #e2e8f0 !important;
+}
+.container,
+.container-fluid {
+  background: transparent !important;
+}
+.dash-wrapper,
+.customer-wrap {
+  background: transparent !important;
+}
+body {
+  background: radial-gradient(circle at top, #0f172a, #020617);
+}
+.dashboard-main {
+  padding: 40px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(10px);
+}
+.card {
+  background: #0f172a;
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 16px;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  border-color: red;
+}
+.sidebar {
+  background: #020617;
+  border-right: 1px solid rgba(255,255,255,0.05);
+}
+
+.sidebar a:hover {
+  background: rgba(34,197,94,0.1);
+  color: #22c55e;
+}
+:root {
+  --bs-body-bg: #0a0f1e;
+  --bs-body-color: #e2e8f0;
+}

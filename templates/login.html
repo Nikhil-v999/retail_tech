@@ -1,7 +1,6 @@
 {% include "header.html" %}
 
-<div class="container d-flex justify-content-center align-items-center"
-     style="min-height: 85vh;">
+<div class="container d-flex justify-content-center align-items-center login-page">
 
   <div class="col-md-5 col-lg-4">
 
@@ -36,7 +35,7 @@
         {% endwith %}
 
         <!-- FORM (Bootstrap manual) -->
-        <form method="POST">
+        <form method="POST" action="{{ url_for('login') }}">
           {{ form.hidden_tag() }}
 
           <div class="mb-3">
@@ -50,7 +49,9 @@
           </div>
 
           <div class="d-grid">
-            {{ form.submit(class="btn btn-success") }}
+            <button type="submit" class="btn btn-success w-100">
+    Login
+</button>
           </div>
         </form>
 
