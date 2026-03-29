@@ -1,573 +1,596 @@
-
 {% include "header.html" %}
-
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
-/* ═══════════════════════════════════════════════════════════════
-   DEALDROP — RETAILER DASHBOARD
-   Vibe: Vibrant startup — rich midnight + electric coral + cyan
-   Fonts: Plus Jakarta Sans (display) + Fira Code (numbers/mono)
-   ═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════
+   DEALDROP — RETAILER DASHBOARD v3
+   Aesthetic: Dark industrial · Amber accent · Mono data
+   ═══════════════════════════════════════════════════════════ */
 
 :root {
-  --bg:        #0c0f1a;
-  --surface:   #131929;
-  --surface2:  #1a2236;
-  --border:    rgba(255,255,255,0.07);
-  --coral:     #ff5f6d;
-  --cyan:      #00d4ff;
-  --lime:      #b8ff57;
-  --violet:    #a78bfa;
-  --text:      #e8edf5;
-  --muted:     #4a5568;
-  --sub:       #8896a9;
+  --bg:         #07090f;
+  --panel:      #0c1018;
+  --surface:    #111827;
+  --surface2:   #161f30;
+  --border:     rgba(255,255,255,0.055);
+  --border2:    rgba(255,255,255,0.09);
+  --amber:      #f5a623;
+  --amber-glow: rgba(245,166,35,0.15);
+  --green:      #22d47a;
+  --green-glow: rgba(34,212,122,0.12);
+  --red:        #ff4d6a;
+  --red-glow:   rgba(255,77,106,0.12);
+  --blue:       #4d9fff;
+  --blue-glow:  rgba(77,159,255,0.12);
+  --violet:     #a78bfa;
+  --text:       #dde3ed;
+  --muted:      #3d4f63;
+  --sub:        #6b7f96;
+  --sidebar-w:  252px;
+  --radius-md:  12px;
+  --radius-lg:  18px;
 }
 
-*, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   background: var(--bg);
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Syne', sans-serif;
   color: var(--text);
   min-height: 100vh;
 }
 
-/* ── Animated background mesh ───────────────────────── */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 60% 50% at 10% 20%, rgba(255,95,109,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 85% 75%, rgba(0,212,255,0.07) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 40% at 50% 10%, rgba(167,139,250,0.05) 0%, transparent 60%);
-  pointer-events: none;
-  z-index: 0;
-}
+/* ════════════════════════════════════
+   LAYOUT
+   ════════════════════════════════════ */
+.rd-shell { display: flex; min-height: calc(100vh - 80px); }
 
-.dd-shell {
-  display: flex;
-  min-height: calc(100vh - 80px);
-  position: relative;
-  z-index: 1;
-}
-
-/* ── SIDEBAR ─────────────────────────────────────────── */
-.dd-sidebar {
-  width: 240px;
+/* ════════════════════════════════════
+   SIDEBAR
+   ════════════════════════════════════ */
+.rd-sidebar {
+  width: var(--sidebar-w);
   flex-shrink: 0;
-  background: rgba(19,25,41,0.9);
-  backdrop-filter: blur(12px);
+  background: var(--panel);
   border-right: 1px solid var(--border);
-  padding: 28px 0;
+  padding: 24px 14px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   position: sticky;
   top: 80px;
   height: calc(100vh - 80px);
-  display: flex;
-  flex-direction: column;
-}
-
-.dd-brand {
-  padding: 0 22px 24px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 18px;
-}
-
-.dd-brand .tag {
-  font-family: 'Fira Code', monospace;
-  font-size: 10px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--coral);
-  margin-bottom: 6px;
-  opacity: 0.8;
-}
-
-.dd-brand .store {
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--text);
-  letter-spacing: -0.3px;
-}
-
-.dd-brand .city {
-  font-family: 'Fira Code', monospace;
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 3px;
-}
-
-.dd-nav { list-style: none; flex: 1; }
-
-.dd-nav a {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 11px 22px;
-  color: var(--sub);
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 600;
-  border-left: 2px solid transparent;
-  transition: all 0.2s;
-}
-
-.dd-nav a:hover, .dd-nav a.active {
-  color: var(--cyan);
-  background: rgba(0,212,255,0.06);
-  border-left-color: var(--cyan);
-}
-
-.dd-nav a.danger:hover {
-  color: var(--coral);
-  background: rgba(255,95,109,0.06);
-  border-left-color: var(--coral);
-}
-
-/* ── MAIN ────────────────────────────────────────────── */
-.dd-main {
-  flex: 1;
-  padding: 36px 40px;
   overflow-y: auto;
 }
 
-/* ── PAGE HEADER ─────────────────────────────────────── */
-.dd-page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 36px;
-}
-
-.dd-page-header h1 {
-  font-size: 30px;
+.sb-brand {
+  font-size: 18px;
   font-weight: 800;
-  letter-spacing: -0.5px;
-  background: linear-gradient(135deg, var(--text) 0%, var(--sub) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.dd-page-header .sub {
-  font-size: 13px;
-  color: var(--muted);
-  margin-top: 5px;
-  font-weight: 500;
-}
-
-.btn-launch {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: linear-gradient(135deg, var(--coral), #ff8c42);
-  color: #fff;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 13px;
-  font-weight: 800;
-  padding: 12px 22px;
-  border-radius: 12px;
-  text-decoration: none;
-  border: none;
-  cursor: pointer;
-  transition: all 0.25s;
-  letter-spacing: 0.2px;
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-launch::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.btn-launch:hover {
-  color: #fff;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 28px rgba(255,95,109,0.4);
-}
-.btn-launch:hover::before { opacity: 1; }
-
-/* ── FLASH ───────────────────────────────────────────── */
-.dd-flash { margin-bottom: 24px; }
-
-.dd-flash .alert {
-  border-radius: 10px;
-  padding: 13px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  border: none;
-  margin-bottom: 8px;
-}
-
-.dd-flash .alert-success {
-  background: rgba(184,255,87,0.1);
-  border-left: 3px solid var(--lime);
-  color: #c8ff70;
-}
-.dd-flash .alert-danger {
-  background: rgba(255,95,109,0.1);
-  border-left: 3px solid var(--coral);
-  color: #ff8c96;
-}
-.dd-flash .alert-warning {
-  background: rgba(251,191,36,0.1);
-  border-left: 3px solid #fbbf24;
-  color: #fcd34d;
-}
-.dd-flash .alert-info {
-  background: rgba(0,212,255,0.08);
-  border-left: 3px solid var(--cyan);
-  color: #7ee8ff;
-}
-
-/* ── STAT CARDS ──────────────────────────────────────── */
-.dd-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 30px;
-}
-
-.stat-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 22px 20px;
-  position: relative;
-  overflow: hidden;
-  cursor: default;
-  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s;
-}
-
-.stat-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 18px;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.stat-card:hover { transform: translateY(-5px); }
-.stat-card:hover::after { opacity: 1; }
-
-/* glow variants */
-.stat-card.c-coral { border-color: rgba(255,95,109,0.3); }
-.stat-card.c-coral .stat-icon { background: rgba(255,95,109,0.15); }
-.stat-card.c-coral .stat-val  { color: var(--coral); }
-.stat-card.c-coral:hover { box-shadow: 0 16px 40px rgba(255,95,109,0.22); }
-.stat-card.c-coral .stat-glow { background: var(--coral); }
-
-.stat-card.c-cyan { border-color: rgba(0,212,255,0.3); }
-.stat-card.c-cyan .stat-icon { background: rgba(0,212,255,0.15); }
-.stat-card.c-cyan .stat-val  { color: var(--cyan); }
-.stat-card.c-cyan:hover { box-shadow: 0 16px 40px rgba(0,212,255,0.2); }
-.stat-card.c-cyan .stat-glow { background: var(--cyan); }
-
-.stat-card.c-lime { border-color: rgba(184,255,87,0.3); }
-.stat-card.c-lime .stat-icon { background: rgba(184,255,87,0.12); }
-.stat-card.c-lime .stat-val  { color: var(--lime); }
-.stat-card.c-lime:hover { box-shadow: 0 16px 40px rgba(184,255,87,0.18); }
-.stat-card.c-lime .stat-glow { background: var(--lime); }
-
-.stat-card.c-violet { border-color: rgba(167,139,250,0.3); }
-.stat-card.c-violet .stat-icon { background: rgba(167,139,250,0.15); }
-.stat-card.c-violet .stat-val  { color: var(--violet); }
-.stat-card.c-violet:hover { box-shadow: 0 16px 40px rgba(167,139,250,0.2); }
-.stat-card.c-violet .stat-glow { background: var(--violet); }
-
-/* Glow top line */
-.stat-glow {
-  position: absolute;
-  top: 0; left: 10%; right: 10%;
-  height: 2px;
-  border-radius: 0 0 4px 4px;
-  filter: blur(4px);
-  opacity: 0.9;
-}
-
-.stat-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
-}
-
-.stat-label {
-  font-family: 'Fira Code', monospace;
-  font-size: 10px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--muted);
-  font-weight: 500;
-}
-
-.stat-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 17px;
-}
-
-.stat-val {
-  font-family: 'Fira Code', monospace;
-  font-size: 42px;
-  font-weight: 600;
-  line-height: 1;
-  margin-bottom: 6px;
-  letter-spacing: -1px;
-}
-
-.stat-sub {
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 500;
-}
-
-/* ── LOW-STOCK BANNER ────────────────────────────────── */
-.dd-alert-banner {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(255,95,109,0.08);
-  border: 1px solid rgba(255,95,109,0.25);
-  border-left: 3px solid var(--coral);
-  border-radius: 12px;
-  padding: 14px 18px;
-  margin-bottom: 28px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #ff8c96;
-}
-.dd-alert-banner strong { color: var(--coral); }
-
-/* ── SECTION HEADER ──────────────────────────────────── */
-.dd-section-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-.dd-section-head h5 {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text);
-}
-
-/* ── TABLE ───────────────────────────────────────────── */
-.dd-table-wrap {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  overflow: hidden;
-}
-
-.dd-table-wrap table { width: 100%; border-collapse: collapse; }
-
-.dd-table-wrap thead tr {
-  background: var(--surface2);
+  letter-spacing: -0.3px;
+  color: var(--amber);
+  padding: 0 10px 20px;
   border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
 }
 
-.dd-table-wrap th {
-  padding: 13px 18px;
-  font-family: 'Fira Code', monospace;
-  font-size: 10px;
+.sb-section {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
   letter-spacing: 2px;
   text-transform: uppercase;
   color: var(--muted);
-  font-weight: 500;
-  text-align: left;
+  padding: 14px 10px 5px;
 }
 
-.dd-table-wrap tbody tr {
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  transition: background 0.15s;
-}
-.dd-table-wrap tbody tr:last-child { border-bottom: none; }
-.dd-table-wrap tbody tr:hover { background: rgba(255,255,255,0.025); }
-
-.dd-table-wrap td {
-  padding: 16px 18px;
-  font-size: 13px;
+.sb-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
   color: var(--sub);
-  vertical-align: middle;
-}
-
-.pname {
-  font-weight: 700;
-  color: var(--text);
+  text-decoration: none;
   font-size: 14px;
-  margin-bottom: 4px;
+  font-weight: 600;
+  transition: all 0.16s;
+  border: 1px solid transparent;
 }
 
-.pcat {
-  display: inline-block;
-  background: rgba(255,255,255,0.05);
-  color: var(--muted);
-  font-family: 'Fira Code', monospace;
-  font-size: 10px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  padding: 2px 8px;
-  border-radius: 4px;
+.sb-link:hover {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
 }
 
-/* price */
-.price-orig {
-  font-family: 'Fira Code', monospace;
+.sb-link.active {
+  background: var(--amber-glow);
+  color: var(--amber);
+  border-color: rgba(245,166,35,0.22);
+}
+
+.sb-link .sb-icon { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
+.sb-divider { height: 1px; background: var(--border); margin: 8px 0; }
+
+/* ════════════════════════════════════
+   MAIN AREA
+   ════════════════════════════════════ */
+.rd-main { flex: 1; padding: 30px 32px 60px; min-width: 0; }
+
+/* ── Page Header ── */
+.rd-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+  gap: 16px;
+}
+
+.rd-greeting {
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  line-height: 1.1;
+}
+
+.rd-greeting .hi-name { color: var(--amber); }
+
+.rd-meta {
+  font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
   color: var(--muted);
-  text-decoration: line-through;
-  margin-bottom: 3px;
-}
-.price-now {
-  font-family: 'Fira Code', monospace;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--lime);
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.badge-ai {
+.store-tier-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2px 9px;
+  font-size: 10px;
+  color: var(--sub);
+}
+
+/* ── Action Buttons Row ── */
+.rd-actions { display: flex; align-items: center; gap: 10px; }
+
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--amber); color: #07090f;
+  font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 800;
+  padding: 10px 20px; border-radius: var(--radius-md);
+  border: none; text-decoration: none;
+  transition: all 0.18s; letter-spacing: 0.2px; cursor: pointer; white-space: nowrap;
+}
+.btn-primary:hover {
+  background: #ffb832; transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(245,166,35,0.35); color: #07090f;
+}
+
+.btn-secondary {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--surface); color: var(--sub);
+  font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+  padding: 10px 18px; border-radius: var(--radius-md);
+  border: 1px solid var(--border2); text-decoration: none;
+  transition: all 0.18s; cursor: pointer; white-space: nowrap;
+}
+.btn-secondary:hover { background: var(--surface2); color: var(--text); border-color: var(--border2); }
+
+/* ════════════════════════════════════
+   BELL NOTIFICATION
+   ════════════════════════════════════ */
+.notif-wrap { position: relative; }
+
+.bell-btn {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px;
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--radius-md); cursor: pointer;
+  transition: all 0.18s; font-size: 18px;
+}
+.bell-btn:hover { background: var(--surface2); border-color: rgba(245,166,35,0.3); }
+
+.bell-badge {
+  position: absolute; top: -4px; right: -4px;
+  background: var(--red); color: #fff;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
+  min-width: 18px; height: 18px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 4px; border: 2px solid var(--bg);
+  animation: badge-pulse 2s infinite;
+}
+
+@keyframes badge-pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,77,106,0.4); }
+  50%      { box-shadow: 0 0 0 5px rgba(255,77,106,0); }
+}
+
+.notif-dropdown {
+  display: none; position: absolute; top: calc(100% + 8px); right: 0;
+  width: 340px; background: var(--panel); border: 1px solid var(--border2);
+  border-radius: var(--radius-lg); box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  z-index: 500; overflow: hidden;
+  animation: dropIn 0.2s cubic-bezier(0.34,1.3,0.64,1) both;
+}
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.notif-dropdown.open { display: block; }
+
+.notif-hdr {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 16px 12px; border-bottom: 1px solid var(--border);
+}
+.notif-hdr-title { font-size: 13px; font-weight: 800; }
+.notif-mark-all {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--amber);
+  cursor: pointer; background: none; border: none; letter-spacing: 0.5px; transition: opacity 0.15s;
+}
+.notif-mark-all:hover { opacity: 0.7; }
+
+.notif-list { max-height: 340px; overflow-y: auto; }
+.notif-list::-webkit-scrollbar { width: 4px; }
+.notif-list::-webkit-scrollbar-track { background: transparent; }
+.notif-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+.notif-item {
+  display: flex; gap: 12px; padding: 12px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  cursor: pointer; transition: background 0.14s; position: relative;
+}
+.notif-item:hover { background: rgba(255,255,255,0.025); }
+.notif-item.unread { background: rgba(245,166,35,0.04); }
+.notif-item.unread::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px; background: var(--amber); border-radius: 0 2px 2px 0;
+}
+
+.notif-dot {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.notif-dot.alert  { background: var(--red-glow); }
+.notif-dot.deal   { background: var(--green-glow); }
+.notif-dot.system { background: var(--blue-glow); }
+
+.notif-body { flex: 1; min-width: 0; }
+.notif-title { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.notif-text  { font-size: 11px; color: var(--sub); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.notif-time  { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+.notif-empty { padding: 32px 16px; text-align: center; color: var(--muted); font-size: 13px; }
+.notif-footer { padding: 10px 16px; border-top: 1px solid var(--border); text-align: center; }
+.notif-footer a { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--sub); text-decoration: none; letter-spacing: 0.5px; }
+.notif-footer a:hover { color: var(--text); }
+
+/* ════════════════════════════════════
+   FLASH MESSAGES
+   ════════════════════════════════════ */
+.dd-flash { margin-bottom: 20px; }
+.dd-flash .alert { border-radius: 10px; padding: 12px 16px; font-size: 13px; font-weight: 600; border: none; margin-bottom: 8px; }
+.dd-flash .alert-success { background:rgba(34,212,122,0.1);  border-left:3px solid var(--green);  color:#6fffa8; }
+.dd-flash .alert-danger  { background:rgba(255,77,106,0.1);  border-left:3px solid var(--red);    color:#ff9aaa; }
+.dd-flash .alert-warning { background:rgba(245,166,35,0.1);  border-left:3px solid var(--amber);  color:#ffd476; }
+.dd-flash .alert-info    { background:rgba(77,159,255,0.1);  border-left:3px solid var(--blue);   color:#8dc8ff; }
+
+/* ════════════════════════════════════
+   KPI GRID  (5 cards — no Total Products)
+   ════════════════════════════════════ */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 32px;
+}
+@media (max-width: 1200px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 768px)  { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.kpi-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 18px 17px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.22s, transform 0.22s, box-shadow 0.22s;
+  cursor: default;
+}
+
+/* coloured bottom bar */
+.kpi-card::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+}
+.kpi-card.k-amber::after { background: var(--amber); }
+.kpi-card.k-green::after { background: var(--green); }
+.kpi-card.k-red::after   { background: var(--red); }
+.kpi-card.k-blue::after  { background: var(--blue); }
+
+/* ── Per-colour glow on hover ── */
+.kpi-card.k-amber:hover {
+  border-color: rgba(245,166,35,0.5);
+  box-shadow: 0 0 24px rgba(245,166,35,0.18), 0 8px 32px rgba(0,0,0,0.3);
+  transform: translateY(-3px);
+}
+.kpi-card.k-green:hover {
+  border-color: rgba(34,212,122,0.5);
+  box-shadow: 0 0 24px rgba(34,212,122,0.18), 0 8px 32px rgba(0,0,0,0.3);
+  transform: translateY(-3px);
+}
+.kpi-card.k-red:hover {
+  border-color: rgba(255,77,106,0.5);
+  box-shadow: 0 0 24px rgba(255,77,106,0.18), 0 8px 32px rgba(0,0,0,0.3);
+  transform: translateY(-3px);
+}
+.kpi-card.k-blue:hover {
+  border-color: rgba(77,159,255,0.5);
+  box-shadow: 0 0 24px rgba(77,159,255,0.18), 0 8px 32px rgba(0,0,0,0.3);
+  transform: translateY(-3px);
+}
+
+.kpi-icon  { font-size: 21px; display: block; margin-bottom: 11px; }
+
+.kpi-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 30px; font-weight: 600; line-height: 1; margin-bottom: 7px;
+}
+.kpi-card.k-amber .kpi-value { color: var(--amber); }
+.kpi-card.k-green .kpi-value { color: var(--green); }
+.kpi-card.k-red   .kpi-value { color: var(--red);   }
+.kpi-card.k-blue  .kpi-value { color: var(--blue);  }
+
+.kpi-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted);
+}
+
+/* ════════════════════════════════════
+   SECTION HEADER
+   ════════════════════════════════════ */
+.sec-hdr {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;
+}
+.sec-title { font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.sec-badge {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--muted); padding: 2px 9px; border-radius: 20px;
+}
+
+/* ════════════════════════════════════
+   FILTER + SORT BAR
+   ════════════════════════════════════ */
+.tbl-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.search-box {
+  flex: 1; min-width: 180px; max-width: 260px;
+  background: var(--panel); border: 1px solid var(--border2);
+  color: var(--text); border-radius: 10px;
+  padding: 8px 14px; font-family: 'Syne', sans-serif; font-size: 13px;
+  outline: none; transition: border-color 0.18s;
+}
+.search-box::placeholder { color: var(--muted); }
+.search-box:focus { border-color: rgba(245,166,35,0.45); }
+
+.filter-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 0.5px;
+  background: var(--panel); border: 1px solid var(--border2);
+  color: var(--sub); padding: 5px 12px;
+  border-radius: 20px; cursor: pointer;
+  transition: all 0.16s; white-space: nowrap; user-select: none;
+}
+.chip:hover         { border-color: rgba(245,166,35,0.4); color: var(--amber); background: rgba(245,166,35,0.06); }
+.chip.active        { background: var(--amber-glow); border-color: rgba(245,166,35,0.35); color: var(--amber); }
+.chip.chip-live     { }
+.chip.chip-live.active   { background: var(--green-glow); border-color: rgba(34,212,122,0.35); color: var(--green); }
+.chip.chip-paused.active { background: rgba(100,116,139,0.12); border-color: rgba(100,116,139,0.3); color: #64748b; }
+.chip.chip-expired.active{ background: var(--red-glow); border-color: rgba(255,77,106,0.3); color: var(--red); }
+
+.sort-select {
+  background: var(--panel); border: 1px solid var(--border2);
+  color: var(--sub); border-radius: 10px;
+  padding: 6px 12px; font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  letter-spacing: 0.5px; outline: none; cursor: pointer;
+  transition: border-color 0.18s;
+}
+.sort-select:focus { border-color: rgba(245,166,35,0.4); }
+
+/* ════════════════════════════════════
+   STOCKS TABLE
+   ════════════════════════════════════ */
+.tbl-wrap {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden;
+}
+
+.stocks-tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+
+.stocks-tbl thead tr { border-bottom: 1px solid var(--border); }
+
+.stocks-tbl th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--muted); padding: 13px 16px; text-align: left; white-space: nowrap;
+  cursor: pointer; user-select: none; transition: color 0.15s;
+}
+.stocks-tbl th:hover { color: var(--sub); }
+.stocks-tbl th.sorted { color: var(--amber); }
+
+.stocks-tbl td {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.025);
+  vertical-align: middle;
+}
+.stocks-tbl tr:last-child td { border-bottom: none; }
+
+/* Row hover — left border glow based on row urgency/status, set via JS class */
+.stocks-tbl tbody tr {
+  transition: background 0.14s, border-left-color 0.14s;
+  border-left: 3px solid transparent;
+}
+.stocks-tbl tbody tr:hover { background: rgba(255,255,255,0.022); }
+.stocks-tbl tbody tr.row-live:hover    { border-left-color: var(--green); background: rgba(34,212,122,0.03); }
+.stocks-tbl tbody tr.row-paused:hover  { border-left-color: #4b5563; background: rgba(75,85,99,0.04); }
+.stocks-tbl tbody tr.row-expired:hover { border-left-color: var(--red); background: rgba(255,77,106,0.03); }
+.stocks-tbl tbody tr.row-critical:hover{ border-left-color: #f97316; background: rgba(249,115,22,0.03); }
+
+/* product cell */
+.pname { font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 3px; }
+.pcat  {
+  display: inline-block; background: var(--surface); border: 1px solid var(--border);
+  color: var(--muted); font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; padding: 1px 7px; border-radius: 20px;
+}
+
+/* price cell (MRP only) */
+.p-orig {
+  font-family: 'JetBrains Mono', monospace; font-size: 14px;
+  font-weight: 600; color: var(--text);
+}
+
+/* velocity cell */
+.vel-val { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--violet); }
+
+/* stock badge */
+.stk-badge { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 600; }
+.stk-badge.ok       { color: var(--text); }
+.stk-badge.low      { color: var(--amber); }
+.stk-badge.critical { color: var(--red); animation: flicker 1.5s infinite; }
+
+@keyframes flicker { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* urgency pill */
+.urg {
   display: inline-flex; align-items: center; gap: 4px;
-  background: rgba(184,255,87,0.1);
-  border: 1px solid rgba(184,255,87,0.25);
-  color: var(--lime);
-  font-family: 'Fira Code', monospace;
-  font-size: 10px; font-weight: 600;
-  padding: 2px 7px; border-radius: 4px; margin-left: 5px;
-}
-.badge-rule {
-  background: rgba(74,85,104,0.15);
-  border-color: rgba(74,85,104,0.3);
-  color: var(--muted);
-  font-family: 'Fira Code', monospace;
-  font-size: 10px; font-weight: 600;
-  padding: 2px 7px; border-radius: 4px; margin-left: 5px;
-  display: inline-flex; align-items: center; gap: 4px;
-}
-
-/* stock */
-.stock-ok  { font-family:'Fira Code',monospace; font-weight:600; color:var(--sub); }
-.stock-low { font-family:'Fira Code',monospace; font-weight:700; color:var(--coral); animation:flicker 1.5s infinite; }
-
-@keyframes flicker { 0%,100%{opacity:1} 50%{opacity:0.5} }
-
-/* urgency */
-.urg-low      { color: #4ade80; font-weight:600; }
-.urg-medium   { color: #fbbf24; font-weight:600; }
-.urg-high     { color: #fb923c; font-weight:600; }
-.urg-critical { color: var(--coral); font-weight:700; animation:flicker 1s infinite; }
-
-/* status badges */
-.status-live {
-  display: inline-flex; align-items: center; gap: 5px;
-  background: rgba(184,255,87,0.1);
-  border: 1px solid rgba(184,255,87,0.25);
-  color: var(--lime);
-  font-size: 11px; font-weight: 700;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600;
   padding: 4px 10px; border-radius: 20px;
 }
-.status-live::before {
-  content:''; width:6px; height:6px; background:var(--lime); border-radius:50%;
-  animation:blink 1.5s infinite;
-}
-.status-paused {
-  display: inline-flex; align-items: center; gap: 5px;
-  background: rgba(74,85,104,0.12);
-  border: 1px solid rgba(74,85,104,0.25);
-  color: var(--muted);
-  font-size: 11px; font-weight: 700;
-  padding: 4px 10px; border-radius: 20px;
-}
-.status-expired {
-  background: rgba(255,95,109,0.1);
-  border: 1px solid rgba(255,95,109,0.25);
-  color: var(--coral);
-  font-size: 11px; font-weight: 700;
-  padding: 4px 10px; border-radius: 20px;
-  display: inline-block;
-}
+.urg.low      { background:var(--green-glow); color:var(--green);  border:1px solid rgba(34,212,122,0.2); }
+.urg.medium   { background:var(--amber-glow); color:var(--amber);  border:1px solid rgba(245,166,35,0.2); }
+.urg.high     { background:rgba(251,146,60,0.12); color:#fb923c;   border:1px solid rgba(251,146,60,0.2); }
+.urg.critical { background:var(--red-glow);   color:var(--red);    border:1px solid rgba(255,77,106,0.25); animation:flicker 1.2s infinite; }
 
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+/* status dot */
+.status-dot { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; }
+.status-dot::before { content:''; width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.status-dot.live    { color:var(--green); }
+.status-dot.live::before    { background:var(--green); box-shadow:0 0 6px var(--green); animation:pdot 1.8s infinite; }
+.status-dot.paused  { color:var(--muted); }
+.status-dot.paused::before  { background:var(--muted); }
+.status-dot.expired { color:var(--red); }
+.status-dot.expired::before { background:var(--red); }
 
-/* action buttons */
-.act-btn {
-  display: inline-flex; align-items: center; gap: 5px;
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.09);
-  color: var(--muted);
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 11px; font-weight: 700;
-  padding: 5px 11px; border-radius: 7px;
-  cursor: pointer; text-decoration: none;
-  transition: all 0.2s;
+@keyframes pdot { 0%,100%{box-shadow:0 0 4px var(--green)} 50%{box-shadow:0 0 10px var(--green)} }
+
+/* action icons */
+.act-row { display:flex; gap:5px; align-items:center; }
+.btn-ic {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:33px; height:33px; border-radius:8px;
+  border:1px solid var(--border); background:var(--surface);
+  color:var(--sub); font-size:13px; text-decoration:none; cursor:pointer;
+  transition:all 0.15s;
 }
-.act-btn:hover        { border-color: var(--cyan); color: var(--cyan); }
-.act-del:hover        { border-color: var(--coral) !important; color: var(--coral) !important; }
+.btn-ic:hover           { border-color:var(--border2); color:var(--text); }
+.btn-ic.edit:hover      { border-color:rgba(77,159,255,0.5);  color:var(--blue);  background:rgba(77,159,255,0.06); box-shadow:0 0 10px rgba(77,159,255,0.15); }
+.btn-ic.toggle:hover    { border-color:rgba(245,166,35,0.5);  color:var(--amber); background:rgba(245,166,35,0.06); box-shadow:0 0 10px rgba(245,166,35,0.15); }
+.btn-ic.del:hover       { border-color:rgba(255,77,106,0.5);  color:var(--red);   background:rgba(255,77,106,0.06); box-shadow:0 0 10px rgba(255,77,106,0.15); }
 
-/* empty */
-.dd-empty {
-  text-align: center; padding: 70px 20px; color: var(--muted);
+/* expiry date */
+.expiry-txt { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--sub); }
+.expiry-txt.soon    { color:var(--amber); }
+.expiry-txt.expired { color:var(--red); text-decoration:line-through; }
+
+/* empty state */
+.empty-st { padding:60px 20px; text-align:center; color:var(--muted); }
+.empty-st .e-icon { font-size:44px; display:block; margin-bottom:14px; }
+.empty-st h3 { font-size:17px; color:var(--sub); margin-bottom:6px; }
+.empty-st p  { font-size:13px; }
+
+/* no-results state inside filter */
+.no-results { padding:40px 20px; text-align:center; color:var(--muted); font-size:13px; display:none; }
+
+/* ── Delete confirm modal ── */
+.modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:999; align-items:center; justify-content:center; }
+.modal-bg.open { display:flex; }
+.del-card {
+  background:var(--panel); border:1px solid var(--border2);
+  border-radius:var(--radius-lg); padding:28px; max-width:350px; width:90%;
+  text-align:center; animation:dropIn 0.22s ease both;
 }
-.dd-empty .icon { font-size: 52px; margin-bottom: 14px; }
-.dd-empty p { font-size: 14px; color: var(--sub); margin-bottom: 16px; }
+.del-card h3 { font-size:17px; margin-bottom:8px; }
+.del-card p  { font-size:13px; color:var(--muted); margin-bottom:22px; line-height:1.5; }
+.modal-btns  { display:flex; gap:10px; justify-content:center; }
+.btn-cancel-modal { background:var(--surface); border:1px solid var(--border2); color:var(--sub); padding:9px 22px; border-radius:8px; cursor:pointer; font-family:'Syne',sans-serif; font-weight:700; font-size:14px; }
+.btn-del-confirm  { background:var(--red); border:none; color:#fff; padding:9px 22px; border-radius:8px; cursor:pointer; font-family:'Syne',sans-serif; font-weight:700; font-size:14px; }
 
-/* card entrance animation */
-.stat-card {
-  animation: cardIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
-}
-.stat-card:nth-child(1) { animation-delay:0.05s }
-.stat-card:nth-child(2) { animation-delay:0.12s }
-.stat-card:nth-child(3) { animation-delay:0.19s }
-.stat-card:nth-child(4) { animation-delay:0.26s }
-
-@keyframes cardIn {
-  from { opacity:0; transform:translateY(20px) scale(0.97); }
-  to   { opacity:1; transform:translateY(0)    scale(1); }
+@media (max-width: 900px) {
+  .rd-sidebar { display: none; }
+  .rd-main    { padding: 20px 16px; }
 }
 </style>
 
-<div class="dd-shell">
-
-  <!-- SIDEBAR -->
-  <aside class="dd-sidebar">
-    <div class="dd-brand">
-      <div class="tag">Retailer Portal</div>
-      <div class="store">{{ current_user.name }}</div>
-      <div class="city">📍 {{ current_user.city or 'No city set' }}</div>
+<!-- Delete modal -->
+<div class="modal-bg" id="delModal">
+  <div class="del-card">
+    <div style="font-size:34px;margin-bottom:12px;">🗑️</div>
+    <h3>Delete Product?</h3>
+    <p>This permanently removes the product and all its sale records. This action cannot be undone.</p>
+    <div class="modal-btns">
+      <button class="btn-cancel-modal" onclick="closeDelModal()">Cancel</button>
+      <form id="delForm" method="POST" action="" style="display:inline;">
+        <button type="submit" class="btn-del-confirm">Delete</button>
+      </form>
     </div>
-    <ul class="dd-nav">
-      <li><a href="{{ url_for('retailer_dashboard') }}" class="active">📊 Dashboard</a></li>
-      <li><a href="{{ url_for('add_product') }}">⚡ Launch Deal</a></li>
-      <li><a href="{{ url_for('home') }}">🏠 Home</a></li>
-      <li style="margin-top:auto;">
-        <a href="{{ url_for('logout') }}" class="danger">🚪 Logout</a>
-      </li>
-    </ul>
+  </div>
+</div>
+
+<div class="rd-shell">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="rd-sidebar">
+    <div class="sb-brand">DealDrop ⚡</div>
+
+    <div class="sb-section">Main</div>
+    <a href="{{ url_for('retailer_dashboard') }}" class="sb-link active">
+      <span class="sb-icon">📊</span> Dashboard
+    </a>
+    <a href="{{ url_for('add_product') }}" class="sb-link">
+      <span class="sb-icon">📦</span> Add Product
+    </a>
+    <a href="{{ url_for('launch_deal') }}" class="sb-link">
+      <span class="sb-icon">🚀</span> Launch Deal
+    </a>
+    <a href="{{ url_for('sales_history') }}" class="sb-link">
+      <span class="sb-icon">📈</span> Sales History
+    </a>
+
+    <div class="sb-divider"></div>
+    <div class="sb-section">Account</div>
+    <a href="{{ url_for('logout') }}" class="sb-link">
+      <span class="sb-icon">🚪</span> Logout
+    </a>
   </aside>
 
-  <!-- MAIN -->
-  <main class="dd-main">
+  <!-- ── MAIN ── -->
+  <main class="rd-main">
 
-    <div class="dd-page-header">
-      <div>
-        <h1>My Store Dashboard</h1>
-        <p class="sub">Real-time inventory · AI-powered pricing · Live deals</p>
-      </div>
-      <a href="{{ url_for('add_product') }}" class="btn-launch">⚡ Launch New Deal</a>
-    </div>
-
-    <!-- Flash -->
+    <!-- Flash Messages -->
     <div class="dd-flash">
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}{% for cat, msg in messages %}
@@ -576,145 +599,379 @@ body::before {
       {% endwith %}
     </div>
 
-    <!-- Stats -->
-    <div class="dd-stats">
-      <div class="stat-card c-coral">
-        <div class="stat-glow"></div>
-        <div class="stat-top">
-          <div class="stat-label">Total Products</div>
-          <div class="stat-icon">📦</div>
+    <!-- Top Bar -->
+    <div class="rd-topbar">
+      <div class="rd-greeting-wrap">
+        <div class="rd-greeting">
+          Hey, <span class="hi-name">{{ current_user.name.split()[0] }}</span> 👋
         </div>
-        <div class="stat-val">{{ total_products }}</div>
-        <div class="stat-sub">in your store</div>
+        <div class="rd-meta">
+          <span>{{ current_user.city or 'No city set' }}</span>
+          <span class="store-tier-pill">
+            {% set city_lower = (current_user.city or '').strip().lower() %}
+            {% if city_lower in ['mumbai','delhi','bangalore','bengaluru','hyderabad','chennai','kolkata','pune','ahmedabad','surat','jaipur','lucknow'] %}
+              🔴 High Traffic
+            {% elif current_user.city %}
+              🟠 Med Traffic
+            {% else %}
+              🟡 Low Traffic
+            {% endif %}
+          </span>
+        </div>
       </div>
 
-      <div class="stat-card c-cyan">
-        <div class="stat-glow"></div>
-        <div class="stat-top">
-          <div class="stat-label">Active Deals</div>
-          <div class="stat-icon">⚡</div>
-        </div>
-        <div class="stat-val">{{ active_deals }}</div>
-        <div class="stat-sub">live right now</div>
-      </div>
+      <div class="rd-actions">
+        <a href="{{ url_for('launch_deal') }}" class="btn-secondary">🚀 Launch Deal</a>
+        <a href="{{ url_for('add_product') }}" class="btn-primary">+ Add Product</a>
 
-      <div class="stat-card c-lime">
-        <div class="stat-glow"></div>
-        <div class="stat-top">
-          <div class="stat-label">Total Stock</div>
-          <div class="stat-icon">🏪</div>
-        </div>
-        <div class="stat-val">{{ total_stock }}</div>
-        <div class="stat-sub">units available</div>
-      </div>
+        <!-- Bell -->
+        <div class="notif-wrap">
+          <div class="bell-btn" id="bellBtn" onclick="toggleNotifDropdown()">
+            🔔
+            {% if unread_notifs > 0 %}
+              <span class="bell-badge" id="bellBadge">{{ unread_notifs }}</span>
+            {% endif %}
+          </div>
 
-      <div class="stat-card c-violet">
-        <div class="stat-glow"></div>
-        <div class="stat-top">
-          <div class="stat-label">Low Stock</div>
-          <div class="stat-icon">⚠️</div>
+          <div class="notif-dropdown" id="notifDropdown">
+            <div class="notif-hdr">
+              <div class="notif-hdr-title">Notifications</div>
+              <button class="notif-mark-all" onclick="markAllRead()">MARK ALL READ</button>
+            </div>
+            <div class="notif-list" id="notifList">
+              <div class="notif-empty">Loading…</div>
+            </div>
+            <div class="notif-footer">
+              <a href="#">View all notifications</a>
+            </div>
+          </div>
         </div>
-        <div class="stat-val">{{ low_stock }}</div>
-        <div class="stat-sub">items ≤ 5 units</div>
       </div>
     </div>
 
-    {% if low_stock > 0 %}
-    <div class="dd-alert-banner">
-      ⚠️ <strong>{{ low_stock }} product{{ 's' if low_stock > 1 else '' }}</strong>
-      {{ 'are' if low_stock > 1 else 'is' }} critically low on stock — restock to keep deals live!
+    <!-- KPI Grid — 5 cards, no "Total Products" -->
+    <div class="kpi-grid">
+      <div class="kpi-card k-green">
+        <span class="kpi-icon">⚡</span>
+        <div class="kpi-value">{{ active_deals }}</div>
+        <div class="kpi-label">Active Deals</div>
+      </div>
+      <div class="kpi-card k-red">
+        <span class="kpi-icon">⚠️</span>
+        <div class="kpi-value">{{ low_stock }}</div>
+        <div class="kpi-label">Low Stock ≤5</div>
+      </div>
+      <div class="kpi-card k-amber">
+        <span class="kpi-icon">⏰</span>
+        <div class="kpi-value">{{ expiring_soon }}</div>
+        <div class="kpi-label">Expiring &lt;24h</div>
+      </div>
+      <div class="kpi-card k-green">
+        <span class="kpi-icon">🛒</span>
+        <div class="kpi-value">{{ sales_today }}</div>
+        <div class="kpi-label">Sales Today</div>
+      </div>
+      <div class="kpi-card k-blue">
+        <span class="kpi-icon">₹</span>
+        <div class="kpi-value" style="font-size:22px;">{{ "%.0f"|format(revenue_today) }}</div>
+        <div class="kpi-label">Revenue Today</div>
+      </div>
     </div>
-    {% endif %}
 
-    <div class="dd-section-head">
-      <h5>Your Products &amp; Deals</h5>
-      <a href="{{ url_for('add_product') }}" class="btn-launch" style="font-size:12px;padding:9px 16px;">+ New Deal</a>
+    <!-- Inventory Section Header -->
+    <div class="sec-hdr">
+      <div class="sec-title">
+        📋 Inventory
+        <span class="sec-badge" id="visibleCount">{{ total_products }} items</span>
+      </div>
+      <a href="{{ url_for('add_product') }}" class="btn-primary" style="font-size:12px; padding:8px 16px;">+ Add</a>
     </div>
 
-    <div class="dd-table-wrap">
+    <!-- Filter + Sort controls -->
+    <div class="tbl-controls">
+      <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search products…" oninput="applyFilters()">
+      <div class="filter-chips">
+        <span class="chip active" data-filter="all"    onclick="setFilter('all',this)">All</span>
+        <span class="chip chip-live"    data-filter="live"    onclick="setFilter('live',this)">⚡ Live</span>
+        <span class="chip chip-paused"  data-filter="paused"  onclick="setFilter('paused',this)">⏸ Paused</span>
+        <span class="chip chip-expired" data-filter="expired" onclick="setFilter('expired',this)">🔴 Expired</span>
+        <span class="chip"              data-filter="low"     onclick="setFilter('low',this)">⚠️ Low Stock</span>
+      </div>
+      <select class="sort-select" id="sortSelect" onchange="applyFilters()">
+        <option value="default">Sort: Default</option>
+        <option value="expiry_asc">Expiry ↑ (soonest)</option>
+        <option value="expiry_desc">Expiry ↓ (latest)</option>
+        <option value="stock_asc">Stock ↑</option>
+        <option value="stock_desc">Stock ↓</option>
+        <option value="price_asc">Price ↑</option>
+        <option value="price_desc">Price ↓</option>
+        <option value="name_asc">Name A→Z</option>
+      </select>
+    </div>
+
+    <!-- Stocks Table -->
+    <div class="tbl-wrap">
       {% if products %}
-      <table>
+      <table class="stocks-tbl" id="stocksTable">
         <thead>
           <tr>
-            <th>Product</th>
-            <th>Pricing</th>
-            <th>Stock</th>
-            <th>Expires In</th>
+            <th onclick="sortBy('name')">Product</th>
+            <th onclick="sortBy('price')">MRP</th>
+            <th onclick="sortBy('velocity')">Velocity</th>
+            <th onclick="sortBy('stock')">Stock</th>
+            <th onclick="sortBy('expiry')">Deal Expires</th>
+            <th onclick="sortBy('urgency')">Urgency</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="stocksTbody">
           {% for p in products %}
-          <tr>
+          {% set row_status = 'expired' if p.is_expired else ('live' if p.deal_active else 'paused') %}
+          {% set row_urgency = p.urgency_level %}
+          <tr class="row-{{ row_status }} {% if p.urgency_level == 'critical' and not p.is_expired %}row-critical{% endif %}"
+              data-name="{{ p.name|lower }}"
+              data-category="{{ p.category|lower }}"
+              data-status="{{ row_status }}"
+              data-stock="{{ p.stock }}"
+              data-price="{{ p.original_price }}"
+              data-urgency="{{ ['low','medium','high','critical'].index(p.urgency_level) }}"
+              data-expiry="{{ p.expiry_date.isoformat() }}">
             <td>
               <div class="pname">{{ p.name }}</div>
-              <span class="pcat">{{ p.category }}</span>
+              <span class="pcat">{{ p.category or '—' }}</span>
             </td>
             <td>
-              <div class="price-orig">₹{{ "%.2f"|format(p.original_price) }}</div>
-              <div style="display:flex;align-items:center;flex-wrap:wrap;gap:2px;">
-                <span class="price-now">₹{{ "%.2f"|format(p.current_price) }}</span>
-                {% if p.ai_suggested_discount %}
-                  <span class="badge-ai">🤖 AI {{ p.discount_percent }}%</span>
-                {% else %}
-                  <span class="badge-rule">⏱ {{ p.discount_percent }}%</span>
-                {% endif %}
-              </div>
+              <div class="p-orig">₹{{ "%.2f"|format(p.original_price) }}</div>
             </td>
             <td>
-              <span class="{{ 'stock-low' if p.stock <= 5 else 'stock-ok' }}">{{ p.stock }} units</span>
+              <span class="vel-val">{{ "%.1f"|format(p.velocity) }}/day</span>
+            </td>
+            <td>
+              <span class="stk-badge {% if p.stock <= 2 %}critical{% elif p.stock <= 5 %}low{% else %}ok{% endif %}">
+                {{ p.stock }}
+              </span>
+              <span style="font-size:11px;color:var(--muted);margin-left:3px;">u</span>
             </td>
             <td>
               {% if p.is_expired %}
-                <span class="urg-critical">Expired</span>
-              {% elif p.hours_left < 1 %}
-                <span class="urg-critical">⚡ {{ (p.hours_left*60)|int }}m left</span>
-              {% elif p.hours_left < 6 %}
-                <span class="urg-critical">🔥 {{ p.hours_left|round(1) }}h left</span>
-              {% elif p.hours_left < 12 %}
-                <span class="urg-high">⏰ {{ p.hours_left|round(1) }}h left</span>
-              {% elif p.hours_left < 24 %}
-                <span class="urg-medium">⏳ {{ p.hours_left|round(1) }}h left</span>
+                <span class="expiry-txt expired">Expired</span>
+              {% elif p.hours_left <= 24 %}
+                <span class="expiry-txt soon">{{ p.expiry_date.strftime('%d %b, %H:%M') }}</span>
               {% else %}
-                <span class="urg-low">{{ p.hours_left|round(0)|int }}h left</span>
+                <span class="expiry-txt">{{ p.expiry_date.strftime('%d %b %Y') }}</span>
               {% endif %}
             </td>
             <td>
+              <span class="urg {{ p.urgency_level }}">
+                {% if   p.urgency_level == 'low'      %}🟢
+                {% elif p.urgency_level == 'medium'   %}🟡
+                {% elif p.urgency_level == 'high'     %}🟠
+                {% else %}🔴{% endif %}
+                {{ p.urgency_level|capitalize }}
+              </span>
+            </td>
+            <td>
               {% if p.is_expired %}
-                <span class="status-expired">Expired</span>
+                <span class="status-dot expired">Expired</span>
               {% elif p.deal_active %}
-                <span class="status-live">Live</span>
+                <span class="status-dot live">Live</span>
               {% else %}
-                <span class="status-paused">Paused</span>
+                <span class="status-dot paused">Paused</span>
               {% endif %}
             </td>
             <td>
-              <div style="display:flex;gap:6px;">
-                <a href="{{ url_for('toggle_deal', product_id=p.id) }}" class="act-btn">
-                  {% if p.deal_active %}⏸ Pause{% else %}▶ Activate{% endif %}
+              <div class="act-row">
+                <a href="{{ url_for('edit_product', product_id=p.id) }}"
+                   class="btn-ic edit" title="Edit">✏️</a>
+                <a href="{{ url_for('toggle_deal', product_id=p.id) }}"
+                   class="btn-ic toggle"
+                   title="{{ 'Pause' if p.deal_active else 'Activate' }}">
+                  {{ '⏸' if p.deal_active else '▶️' }}
                 </a>
-                <a href="{{ url_for('delete_product', product_id=p.id) }}"
-                   class="act-btn act-del"
-                   onclick="return confirm('Delete this product?')">
-                  🗑 Delete
-                </a>
+                <button class="btn-ic del" title="Delete"
+                        onclick="openDelModal({{ p.id }})">🗑️</button>
               </div>
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
+      <div class="no-results" id="noResults">
+        <span style="font-size:36px;display:block;margin-bottom:12px;">🔍</span>
+        No products match your filter. <a href="#" onclick="setFilter('all',document.querySelector('[data-filter=all]'));return false;" style="color:var(--amber);">Clear filter</a>
+      </div>
       {% else %}
-      <div class="dd-empty">
-        <div class="icon">📦</div>
-        <p>No products yet. Launch your first flash deal!</p>
-        <a href="{{ url_for('add_product') }}" class="btn-launch" style="display:inline-flex;">⚡ Add Your First Deal</a>
+      <div class="empty-st">
+        <span class="e-icon">📭</span>
+        <h3>No products yet</h3>
+        <p>Add your first product to get started.</p>
       </div>
       {% endif %}
     </div>
 
   </main>
 </div>
+
+<script>
+/* ── Delete modal ── */
+function openDelModal(productId) {
+  document.getElementById('delForm').action = `/delete_product/${productId}`;
+  document.getElementById('delModal').classList.add('open');
+}
+function closeDelModal() {
+  document.getElementById('delModal').classList.remove('open');
+}
+document.getElementById('delModal').addEventListener('click', function(e) {
+  if (e.target === this) closeDelModal();
+});
+
+/* ── Notification bell ── */
+const NTYPE_ICON = { alert: '⚠️', deal: '⚡', system: 'ℹ️' };
+
+function toggleNotifDropdown() {
+  const dd = document.getElementById('notifDropdown');
+  const isOpen = dd.classList.toggle('open');
+  if (isOpen) loadNotifications();
+}
+
+document.addEventListener('click', function(e) {
+  const wrap = document.querySelector('.notif-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('notifDropdown').classList.remove('open');
+  }
+});
+
+async function loadNotifications() {
+  try {
+    const res  = await fetch('/api/notifications');
+    const data = await res.json();
+    renderNotifications(data);
+  } catch(e) {
+    document.getElementById('notifList').innerHTML =
+      '<div class="notif-empty">Failed to load.</div>';
+  }
+}
+
+function renderNotifications(items) {
+  const list = document.getElementById('notifList');
+  if (!items.length) {
+    list.innerHTML = '<div class="notif-empty">🎉 You\'re all caught up!</div>';
+    return;
+  }
+  list.innerHTML = items.map(n => `
+    <div class="notif-item ${n.read ? '' : 'unread'}" onclick="markRead(${n.id}, this)">
+      <div class="notif-dot ${n.ntype}">${NTYPE_ICON[n.ntype] || 'ℹ️'}</div>
+      <div class="notif-body">
+        <div class="notif-title">${n.title}</div>
+        <div class="notif-text">${n.body}</div>
+      </div>
+      <div class="notif-time">${n.created_at}</div>
+    </div>
+  `).join('');
+}
+
+async function markRead(id, el) {
+  el.classList.remove('unread');
+  await fetch('/api/notifications/mark_read', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id }),
+  });
+  refreshBadge();
+}
+
+async function markAllRead() {
+  await fetch('/api/notifications/mark_read', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
+  refreshBadge();
+}
+
+async function refreshBadge() {
+  const res   = await fetch('/api/notifications/unread_count');
+  const data  = await res.json();
+  const badge = document.getElementById('bellBadge');
+  if (!badge) return;
+  if (data.count > 0) { badge.textContent = data.count; badge.style.display = ''; }
+  else badge.style.display = 'none';
+}
+
+setInterval(refreshBadge, 30000);
+
+/* ══════════════════════════════════════════
+   FILTER + SORT ENGINE
+   ══════════════════════════════════════════ */
+let activeFilter = 'all';
+
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  applyFilters();
+}
+
+function applyFilters() {
+  const q    = document.getElementById('searchBox').value.toLowerCase().trim();
+  const sort = document.getElementById('sortSelect').value;
+  const tbody = document.getElementById('stocksTbody');
+  if (!tbody) return;
+
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  let visible = 0;
+
+  // 1. Filter
+  rows.forEach(row => {
+    const name   = row.dataset.name || '';
+    const cat    = row.dataset.category || '';
+    const status = row.dataset.status || '';
+    const stock  = parseInt(row.dataset.stock) || 0;
+
+    let show = true;
+    if (q && !name.includes(q) && !cat.includes(q)) show = false;
+    if (activeFilter === 'live'    && status !== 'live')    show = false;
+    if (activeFilter === 'paused'  && status !== 'paused')  show = false;
+    if (activeFilter === 'expired' && status !== 'expired') show = false;
+    if (activeFilter === 'low'     && stock > 5)            show = false;
+
+    row.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+
+  // 2. Sort visible rows
+  const visibleRows = rows.filter(r => r.style.display !== 'none');
+  visibleRows.sort((a, b) => {
+    switch(sort) {
+      case 'expiry_asc':  return new Date(a.dataset.expiry) - new Date(b.dataset.expiry);
+      case 'expiry_desc': return new Date(b.dataset.expiry) - new Date(a.dataset.expiry);
+      case 'stock_asc':   return parseInt(a.dataset.stock) - parseInt(b.dataset.stock);
+      case 'stock_desc':  return parseInt(b.dataset.stock) - parseInt(a.dataset.stock);
+      case 'price_asc':   return parseFloat(a.dataset.price) - parseFloat(b.dataset.price);
+      case 'price_desc':  return parseFloat(b.dataset.price) - parseFloat(a.dataset.price);
+      case 'name_asc':    return a.dataset.name.localeCompare(b.dataset.name);
+      case 'urgency':     return parseInt(b.dataset.urgency) - parseInt(a.dataset.urgency);
+      default: return 0;
+    }
+  });
+  visibleRows.forEach(r => tbody.appendChild(r));
+
+  // 3. Count
+  const countEl = document.getElementById('visibleCount');
+  if (countEl) countEl.textContent = visible + ' items';
+
+  // 4. No-results
+  const noRes = document.getElementById('noResults');
+  if (noRes) noRes.style.display = visible === 0 ? 'block' : 'none';
+}
+
+function sortBy(col) {
+  const sel = document.getElementById('sortSelect');
+  const mapping = { name: 'name_asc', price: 'price_asc', stock: 'stock_asc', expiry: 'expiry_asc', velocity: 'default', urgency: 'urgency' };
+  if (sel) { sel.value = mapping[col] || 'default'; applyFilters(); }
+  document.querySelectorAll('.stocks-tbl th').forEach(th => th.classList.remove('sorted'));
+  event.currentTarget.classList.add('sorted');
+}
+</script>
 
 {% include "footer.html" %}

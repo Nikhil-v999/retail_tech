@@ -1,0 +1,647 @@
+{% include "header.html" %}
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:        #090c14;
+  --panel:     #0e1420;
+  --surface:   #131b2e;
+  --surface2:  #1a2540;
+  --border:    rgba(255,255,255,0.06);
+  --border2:   rgba(255,255,255,0.1);
+  --amber:     #f5a623;
+  --amber-dim: rgba(245,166,35,0.12);
+  --green:     #22d47a;
+  --red:       #ff4d6a;
+  --blue:      #4d9fff;
+  --cyan:      #00d4ff;
+  --violet:    #a78bfa;
+  --text:      #e2e8f0;
+  --muted:     #4a5568;
+  --sub:       #7a8fa6;
+  --sidebar-w: 240px;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); font-family:'Syne',sans-serif; color:var(--text); min-height:100vh; }
+
+.rd-shell { display:flex; min-height:calc(100vh - 80px); }
+
+.rd-sidebar {
+  width:var(--sidebar-w); flex-shrink:0;
+  background:var(--panel); border-right:1px solid var(--border);
+  padding:28px 16px; display:flex; flex-direction:column; gap:6px;
+  position:sticky; top:80px; height:calc(100vh - 80px); overflow-y:auto;
+}
+.sb-label { font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); padding:14px 10px 6px; }
+.sb-link  { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; color:var(--sub); text-decoration:none; font-size:14px; font-weight:600; transition:all 0.18s; border:1px solid transparent; }
+.sb-link:hover  { background:var(--surface); color:var(--text); border-color:var(--border); }
+.sb-link.active { background:var(--amber-dim); color:var(--amber); border-color:rgba(245,166,35,0.2); }
+.sb-link .icon  { font-size:16px; width:20px; text-align:center; }
+.sb-divider { height:1px; background:var(--border); margin:10px 0; }
+
+.ld-main { flex:1; padding:32px 36px; min-width:0; }
+
+.back-link { display:inline-flex; align-items:center; gap:6px; color:var(--muted); text-decoration:none; font-size:13px; font-weight:700; margin-bottom:28px; transition:color 0.2s; }
+.back-link:hover { color:var(--amber); }
+
+.ld-title { font-size:26px; font-weight:800; letter-spacing:-0.4px; margin-bottom:4px; }
+.ld-sub   { font-size:13px; color:var(--muted); margin-bottom:32px; font-family:'JetBrains Mono',monospace; }
+
+/* Flash */
+.dd-flash .alert { border-radius:10px; padding:12px 16px; font-size:13px; font-weight:600; border:none; margin-bottom:8px; }
+.dd-flash .alert-success { background:rgba(34,212,122,0.1);  border-left:3px solid var(--green); color:#5effa0; }
+.dd-flash .alert-danger  { background:rgba(255,77,106,0.1);  border-left:3px solid var(--red);   color:#ff8fa0; }
+.dd-flash .alert-warning { background:rgba(245,166,35,0.1);  border-left:3px solid var(--amber); color:#ffd070; }
+
+/* Cards */
+.ld-card { background:var(--panel); border:1px solid var(--border); border-radius:20px; padding:28px; margin-bottom:16px; }
+.card-lbl {
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted);
+  margin-bottom:22px; padding-bottom:14px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:8px;
+}
+.step-num {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:22px; height:22px; border-radius:50%; font-size:11px; font-weight:800;
+  background: var(--amber-dim); border:1px solid rgba(245,166,35,0.3); color:var(--amber);
+  flex-shrink:0;
+}
+
+/* ════════════════════════════════════
+   PRODUCT PICKER SECTION
+   ════════════════════════════════════ */
+.picker-controls {
+  display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center;
+}
+.picker-search {
+  flex:1; min-width:180px; max-width:280px;
+  background:var(--bg); border:1px solid var(--border2); color:var(--text);
+  border-radius:10px; padding:9px 14px; font-family:'Syne',sans-serif; font-size:13px;
+  outline:none; transition:border-color 0.18s;
+}
+.picker-search::placeholder { color:var(--muted); }
+.picker-search:focus { border-color:rgba(245,166,35,0.45); }
+
+.cat-chip {
+  font-family:'JetBrains Mono',monospace; font-size:10px;
+  background:var(--surface); border:1px solid var(--border2);
+  color:var(--sub); padding:5px 12px; border-radius:20px;
+  cursor:pointer; transition:all 0.16s; white-space:nowrap; user-select:none;
+}
+.cat-chip:hover, .cat-chip.active {
+  background:var(--amber-dim); border-color:rgba(245,166,35,0.35); color:var(--amber);
+}
+
+.sort-sel {
+  background:var(--panel); border:1px solid var(--border2); color:var(--sub);
+  border-radius:10px; padding:6px 12px; font-family:'JetBrains Mono',monospace;
+  font-size:10px; outline:none; cursor:pointer; transition:border-color 0.18s;
+}
+.sort-sel:focus { border-color:rgba(245,166,35,0.4); }
+
+/* Product card grid */
+.prod-grid {
+  display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap:12px; max-height:420px; overflow-y:auto; padding-right:4px;
+}
+.prod-grid::-webkit-scrollbar { width:4px; }
+.prod-grid::-webkit-scrollbar-track { background:transparent; }
+.prod-grid::-webkit-scrollbar-thumb { background:var(--border2); border-radius:4px; }
+
+.prod-card {
+  background:var(--surface); border:1.5px solid var(--border);
+  border-radius:14px; padding:16px; cursor:pointer;
+  transition:all 0.18s; position:relative; overflow:hidden;
+}
+.prod-card:hover {
+  border-color:rgba(245,166,35,0.4);
+  background:var(--surface2);
+  box-shadow:0 0 18px rgba(245,166,35,0.1);
+  transform:translateY(-2px);
+}
+.prod-card.selected {
+  border-color:var(--amber) !important;
+  background:var(--amber-dim) !important;
+  box-shadow:0 0 22px rgba(245,166,35,0.2) !important;
+}
+.prod-card.selected::after {
+  content:'✓'; position:absolute; top:10px; right:12px;
+  width:22px; height:22px; background:var(--amber); color:#090c14;
+  border-radius:50%; font-size:12px; font-weight:800;
+  display:flex; align-items:center; justify-content:center;
+}
+
+.pc-emoji { font-size:28px; margin-bottom:10px; display:block; }
+.pc-name  { font-size:14px; font-weight:700; color:var(--text); margin-bottom:4px; line-height:1.3; }
+.pc-cat   {
+  font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:1px;
+  text-transform:uppercase; color:var(--muted);
+  background:var(--bg); border:1px solid var(--border); padding:2px 7px; border-radius:20px;
+  display:inline-block; margin-bottom:10px;
+}
+.pc-stats { display:flex; gap:10px; }
+.pc-stat  { text-align:center; }
+.pc-val   { font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:600; color:var(--amber); display:block; line-height:1; }
+.pc-lbl   { font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-top:2px; display:block; }
+
+.prod-hidden { display:none; }
+.picker-empty { padding:40px 20px; text-align:center; color:var(--muted); font-size:13px; display:none; }
+.picker-empty span { font-size:32px; display:block; margin-bottom:10px; }
+
+/* The actual hidden select (WTForms validation) */
+.hidden-select { display:none; }
+
+/* Selected product preview row */
+.selected-preview {
+  display:none; margin-top:16px;
+  background:var(--bg); border:1px solid rgba(245,166,35,0.2);
+  border-radius:12px; padding:14px 18px;
+  animation:fadeIn 0.25s ease;
+}
+.selected-preview.show { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+
+.sp-info { flex:1; min-width:0; }
+.sp-name { font-size:15px; font-weight:800; color:var(--amber); margin-bottom:2px; }
+.sp-meta { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); }
+.sp-stats { display:flex; gap:20px; flex-shrink:0; }
+.sp-stat .sp-val { font-family:'JetBrains Mono',monospace; font-size:18px; font-weight:600; color:var(--text); }
+.sp-stat .sp-lbl { font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); display:block; margin-top:2px; }
+.sp-vel { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--violet); }
+
+/* Form elements */
+.f-group { margin-bottom:18px; }
+.f-label { display:block; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:1.8px; text-transform:uppercase; color:var(--muted); margin-bottom:7px; }
+.f-control {
+  width:100%; background:var(--bg) !important; border:1px solid rgba(255,255,255,0.08) !important;
+  color:var(--text) !important; border-radius:11px !important; padding:12px 15px !important;
+  font-size:14px !important; font-family:'Syne',sans-serif !important;
+  transition:border-color 0.2s, box-shadow 0.2s !important; outline:none !important;
+}
+.f-control:focus {
+  border-color:rgba(245,166,35,0.5) !important;
+  box-shadow:0 0 0 3px rgba(245,166,35,0.08) !important;
+}
+.f-hint { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-top:5px; }
+.f-row  { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+/* Smart time button */
+.btn-smart-time {
+  width:100%; display:flex; align-items:center; justify-content:center; gap:10px;
+  background:var(--surface); border:1.5px dashed rgba(0,212,255,0.35);
+  color:var(--cyan); font-family:'Syne',sans-serif; font-size:13px; font-weight:800;
+  padding:12px; border-radius:11px; cursor:pointer; transition:all 0.2s; margin-bottom:14px;
+}
+.btn-smart-time:hover { background:rgba(0,212,255,0.07); border-color:var(--cyan); box-shadow:0 0 16px rgba(0,212,255,0.12); }
+.btn-smart-time:disabled { opacity:0.4; cursor:not-allowed; }
+
+.reasoning-box {
+  background:rgba(0,212,255,0.05); border:1px solid rgba(0,212,255,0.15);
+  border-radius:10px; padding:12px 16px;
+  font-family:'JetBrains Mono',monospace; font-size:11px;
+  color:var(--sub); line-height:1.7; display:none;
+}
+.reasoning-box.show { display:block; animation:fadeIn 0.3s ease; }
+
+/* AI Discount panel */
+.ai-result {
+  background:var(--bg); border:1px solid rgba(245,166,35,0.2);
+  border-radius:14px; overflow:hidden; display:none; margin-top:16px;
+  animation: fadeIn 0.35s ease;
+}
+.ai-result.show { display:block; }
+.ai-result-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 18px; background:rgba(245,166,35,0.05);
+  border-bottom:1px solid rgba(245,166,35,0.12);
+}
+.ai-chip {
+  display:inline-flex; align-items:center; gap:6px;
+  background:rgba(245,166,35,0.1); border:1px solid rgba(245,166,35,0.3);
+  color:var(--amber); font-family:'JetBrains Mono',monospace;
+  font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;
+  padding:3px 10px; border-radius:20px;
+}
+.ai-body { display:flex; align-items:center; gap:20px; padding:20px; }
+.ai-pct-wrap { text-align:center; min-width:80px; }
+.ai-pct { font-family:'JetBrains Mono',monospace; font-size:46px; font-weight:600; line-height:1; background:linear-gradient(135deg, var(--amber), #ff8c42); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.ai-pct-label { font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:3px; }
+.ai-divider { width:1px; align-self:stretch; background:rgba(255,255,255,0.06); flex-shrink:0; }
+.ai-prices { flex:1; }
+.ai-price-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:13px; }
+.ai-price-row:last-child { border-bottom:none; }
+.ai-price-row .lbl { color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:11px; }
+.ai-price-row .val { font-family:'JetBrains Mono',monospace; font-weight:600; }
+.ai-price-row .val.strike { text-decoration:line-through; color:var(--muted); }
+.ai-price-row .val.save   { color:var(--red); }
+.ai-price-row .val.final  { color:var(--green); font-size:18px; }
+
+.override-hint { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-top:6px; }
+
+/* Submit */
+.btn-launch {
+  width:100%; background:linear-gradient(135deg, var(--amber), #ff8c42);
+  color:#090c14; border:none; padding:15px; border-radius:13px;
+  font-family:'Syne',sans-serif; font-size:15px; font-weight:800;
+  cursor:pointer; transition:all 0.25s; margin-top:8px; letter-spacing:0.3px;
+}
+.btn-launch:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(245,166,35,0.35); }
+.btn-launch:disabled { opacity:0.5; cursor:not-allowed; transform:none; box-shadow:none; }
+
+/* No products */
+.no-products {
+  background:var(--panel); border:1px solid var(--border);
+  border-radius:16px; padding:64px 24px; text-align:center; color:var(--muted);
+}
+.no-products h3 { font-size:18px; color:var(--sub); margin-bottom:10px; }
+
+@media (max-width:900px) {
+  .rd-sidebar { display:none; }
+  .ld-main { padding:20px 16px; }
+  .f-row { grid-template-columns:1fr; }
+  .prod-grid { grid-template-columns:1fr 1fr; }
+}
+</style>
+
+<div class="rd-shell">
+
+  <aside class="rd-sidebar">
+    <div class="sb-label">Main</div>
+    <a href="{{ url_for('retailer_dashboard') }}" class="sb-link"><span class="icon">📊</span> Dashboard</a>
+    <a href="{{ url_for('add_product') }}"        class="sb-link"><span class="icon">📦</span> Add Product</a>
+    <a href="{{ url_for('launch_deal') }}"        class="sb-link active"><span class="icon">⚡</span> Launch Deal</a>
+    <a href="{{ url_for('sales_history') }}"      class="sb-link"><span class="icon">📈</span> Sales History</a>
+    <div class="sb-divider"></div>
+    <div class="sb-label">Account</div>
+    <a href="{{ url_for('logout') }}" class="sb-link"><span class="icon">🚪</span> Logout</a>
+  </aside>
+
+  <main class="ld-main">
+
+    <a href="{{ url_for('retailer_dashboard') }}" class="back-link">← Back to Dashboard</a>
+    <div class="ld-title">Launch a Flash Deal ⚡</div>
+    <p class="ld-sub">Pick from your inventory — AI handles pricing & timing.</p>
+
+    <div class="dd-flash">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat, msg in messages %}
+          <div class="alert alert-{{ cat }}">{{ msg }}</div>
+        {% endfor %}{% endif %}
+      {% endwith %}
+    </div>
+
+    {% if products %}
+
+    <form method="POST" action="{{ url_for('launch_deal') }}" id="dealForm">
+      {{ form.hidden_tag() }}
+
+      <!-- Hidden WTForms select (required for validation) -->
+      {{ form.product_id(class="hidden-select", id="productSelect") }}
+
+      <!-- ── STEP 1: Product Card Picker ── -->
+      <div class="ld-card">
+        <div class="card-lbl">
+          <span class="step-num">1</span>
+          SELECT PRODUCT FROM INVENTORY
+        </div>
+
+        <!-- Search + Category Filter + Sort -->
+        <div class="picker-controls">
+          <input type="text" class="picker-search" id="pickerSearch"
+                 placeholder="🔍 Search products…" oninput="filterCards()">
+          <span class="cat-chip active" data-cat="all" onclick="setCatFilter('all',this)">All</span>
+          {% set cats_seen = [] %}
+          {% for p in products %}
+            {% if p.category not in cats_seen %}
+              {% set _ = cats_seen.append(p.category) %}
+              <span class="cat-chip" data-cat="{{ p.category|lower }}" onclick="setCatFilter('{{ p.category|lower }}',this)">{{ p.category }}</span>
+            {% endif %}
+          {% endfor %}
+          <select class="sort-sel" id="cardSort" onchange="filterCards()">
+            <option value="default">Sort: Default</option>
+            <option value="stock_desc">Stock ↓</option>
+            <option value="stock_asc">Stock ↑</option>
+            <option value="price_asc">Price ↑</option>
+            <option value="price_desc">Price ↓</option>
+            <option value="name_asc">Name A→Z</option>
+          </select>
+        </div>
+
+        <!-- Card grid -->
+        <div class="prod-grid" id="prodGrid">
+          {% set emoji_map = {
+            'dairy':'🥛','bakery':'🍞','snacks':'🍿','canned':'🥫',
+            'cosmetics':'💄','beverages':'🧃','household':'🏠',
+            'electronics':'📱','clothing':'👕','other':'📦'
+          } %}
+          {% for p in products %}
+          {% set em = emoji_map.get(p.category|lower, '📦') %}
+          <div class="prod-card"
+               data-id="{{ p.id }}"
+               data-name="{{ p.name|lower }}"
+               data-cat="{{ p.category|lower }}"
+               data-stock="{{ p.stock }}"
+               data-price="{{ p.original_price }}"
+               data-fullname="{{ p.name|e }}"
+               data-fullcat="{{ p.category|e }}"
+               onclick="selectProduct({{ p.id }}, this)">
+            <span class="pc-emoji">{{ em }}</span>
+            <div class="pc-name">{{ p.name }}</div>
+            <span class="pc-cat">{{ p.category }}</span>
+            <div class="pc-stats">
+              <div class="pc-stat">
+                <span class="pc-val">{{ p.stock }}</span>
+                <span class="pc-lbl">units</span>
+              </div>
+              <div class="pc-stat">
+                <span class="pc-val">₹{{ "%.0f"|format(p.original_price) }}</span>
+                <span class="pc-lbl">MRP</span>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="picker-empty" id="pickerEmpty">
+          <span>🔍</span>
+          No products match your filter.
+        </div>
+
+        <!-- Selected product summary -->
+        <div class="selected-preview" id="selectedPreview">
+          <div class="sp-info">
+            <div class="sp-name" id="spName">—</div>
+            <div class="sp-meta" id="spMeta">—</div>
+            <div class="sp-vel" id="spVel">Loading velocity…</div>
+          </div>
+          <div class="sp-stats">
+            <div class="sp-stat">
+              <span class="sp-val" id="spStock">—</span>
+              <span class="sp-lbl">Stock</span>
+            </div>
+            <div class="sp-stat">
+              <span class="sp-val" id="spPrice">—</span>
+              <span class="sp-lbl">MRP</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STEP 2: Deal Closing Time ── -->
+      <div class="ld-card">
+        <div class="card-lbl">
+          <span class="step-num">2</span>
+          DEAL CLOSING TIME
+        </div>
+
+        <button type="button" class="btn-smart-time" id="btnSmartTime"
+                onclick="getSuggestedTime()" disabled>
+          🧠 Suggest Optimal Closing Time
+        </button>
+
+        <div class="reasoning-box" id="reasoningBox"></div>
+
+        <div class="f-group" style="margin-top:14px;">
+          <label class="f-label">{{ form.closing_time.label.text }}</label>
+          {{ form.closing_time(class="f-control", id="closingTimeInput") }}
+          <div class="f-hint">AI suggestion auto-fills this — you can override it.</div>
+        </div>
+      </div>
+
+      <!-- ── STEP 3: AI Pricing ── -->
+      <div class="ld-card">
+        <div class="card-lbl">
+          <span class="step-num">3</span>
+          AI DISCOUNT
+        </div>
+
+        <p style="font-size:13px; color:var(--muted); margin-bottom:18px; line-height:1.7;">
+          FlashMap uses your product's <strong style="color:var(--amber);">real sales velocity</strong>,
+          stock pressure, store tier, and remaining deal window to calculate the optimal discount.
+          Override below if needed.
+        </p>
+
+        <button type="button" id="btnGetDiscount" onclick="getAiDiscount()" disabled
+                style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
+                       background:var(--surface);border:1.5px dashed rgba(245,166,35,0.4);
+                       color:var(--amber);font-family:'Syne',sans-serif;font-size:13px;font-weight:800;
+                       padding:12px;border-radius:11px;cursor:pointer;transition:all 0.2s;">
+          <span id="btnDiscText">🤖 Calculate AI Discount</span>
+        </button>
+
+        <div class="ai-result" id="aiResult">
+          <div class="ai-result-header">
+            <span class="ai-chip" id="aiChip">AI Engine</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);">FlashMap · scikit-learn GBR</span>
+          </div>
+          <div class="ai-body">
+            <div class="ai-pct-wrap">
+              <div class="ai-pct" id="aiPct">0</div>
+              <div class="ai-pct-label">% OFF</div>
+            </div>
+            <div class="ai-divider"></div>
+            <div class="ai-prices">
+              <div class="ai-price-row"><span class="lbl">Original</span>  <span class="val strike" id="aiOrig">—</span></div>
+              <div class="ai-price-row"><span class="lbl">Discount</span>  <span class="val save"   id="aiSave">—</span></div>
+              <div class="ai-price-row"><span class="lbl">Deal Price</span><span class="val final"  id="aiFinal">—</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="f-group" style="margin-top:18px;">
+          <label class="f-label">{{ form.discount_override.label.text }}</label>
+          {{ form.discount_override(class="f-control", id="discountOverride",
+              placeholder="Leave blank to use AI suggestion") }}
+          <div class="override-hint">Tip: Enter a number (1–85) to override the AI recommendation.</div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-launch" id="btnLaunch" disabled>🚀 Go Live</button>
+    </form>
+
+    {% else %}
+    <div class="no-products">
+      <div style="font-size:48px;margin-bottom:16px;">📭</div>
+      <h3>No inactive stock found</h3>
+      <p style="font-size:13px;">All your products are either already live or out of stock.<br>
+        <a href="{{ url_for('add_product') }}" style="color:var(--amber);font-weight:700;">Add a new product</a> first.
+      </p>
+    </div>
+    {% endif %}
+
+  </main>
+</div>
+
+<!-- Product data from Jinja -->
+<script>
+const PRODUCT_DATA = {
+  {% for p in products %}
+  {{ p.id }}: {
+    stock:    {{ p.stock }},
+    price:    {{ p.original_price }},
+    category: "{{ p.category }}",
+    name:     "{{ p.name|replace('"', '\\"') }}",
+  },
+  {% endfor %}
+};
+
+let selectedProductId = null;
+let activeCatFilter   = 'all';
+
+/* ── Card Selection ── */
+function selectProduct(id, cardEl) {
+  selectedProductId = id;
+  const card  = cardEl.closest ? cardEl : document.querySelector(`.prod-card[data-id="${id}"]`);
+  const name     = card.dataset.fullname;
+  const category = card.dataset.fullcat;
+  const stock    = parseInt(card.dataset.stock);
+  const price    = parseFloat(card.dataset.price);
+
+  // Update hidden WTForms select
+  const sel = document.getElementById('productSelect');
+  sel.value = id;
+
+  // Highlight selected card
+  document.querySelectorAll('.prod-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+
+  // Show preview
+  document.getElementById('spName').textContent  = name;
+  document.getElementById('spMeta').textContent  = category + ' · ' + stock + ' units';
+  document.getElementById('spStock').textContent = stock;
+  document.getElementById('spPrice').textContent = '₹' + price.toFixed(2);
+  document.getElementById('spVel').textContent   = 'Loading velocity…';
+  document.getElementById('selectedPreview').classList.add('show');
+
+  // Unlock buttons
+  document.getElementById('btnSmartTime').disabled   = false;
+  document.getElementById('btnGetDiscount').disabled = false;
+  document.getElementById('btnLaunch').disabled      = false;
+
+  // Fetch velocity preview
+  fetchVelocityPreview(id, { category, price, stock });
+}
+
+async function fetchVelocityPreview(productId, p) {
+  const placeholderExpiry = new Date(Date.now() + 7 * 86400000).toISOString().slice(0,16);
+  try {
+    const resp = await fetch('/api/ai_discount_preview', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ product_id: productId, category: p.category, original_price: p.price, stock: p.stock, expiry_iso: placeholderExpiry })
+    });
+    const data = await resp.json();
+    if (!data.error) document.getElementById('spVel').textContent = '⚡ Velocity: ' + data.velocity + ' units/day';
+  } catch(e) { document.getElementById('spVel').textContent = 'Velocity unavailable'; }
+}
+
+/* ── Category + Search filter ── */
+function setCatFilter(cat, el) {
+  activeCatFilter = cat;
+  document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  filterCards();
+}
+
+function filterCards() {
+  const q    = document.getElementById('pickerSearch').value.toLowerCase().trim();
+  const sort = document.getElementById('cardSort').value;
+  const grid = document.getElementById('prodGrid');
+  const cards = Array.from(grid.querySelectorAll('.prod-card'));
+  let visible = 0;
+
+  cards.forEach(c => {
+    const name = c.dataset.name || '';
+    const cat  = c.dataset.cat  || '';
+    let show = true;
+    if (q && !name.includes(q) && !cat.includes(q)) show = false;
+    if (activeCatFilter !== 'all' && cat !== activeCatFilter) show = false;
+    c.classList.toggle('prod-hidden', !show);
+    if (show) visible++;
+  });
+
+  document.getElementById('pickerEmpty').style.display = visible === 0 ? 'block' : 'none';
+
+  // Sort
+  const visibleCards = cards.filter(c => !c.classList.contains('prod-hidden'));
+  visibleCards.sort((a, b) => {
+    switch(sort) {
+      case 'stock_desc': return parseInt(b.dataset.stock) - parseInt(a.dataset.stock);
+      case 'stock_asc':  return parseInt(a.dataset.stock) - parseInt(b.dataset.stock);
+      case 'price_asc':  return parseFloat(a.dataset.price) - parseFloat(b.dataset.price);
+      case 'price_desc': return parseFloat(b.dataset.price) - parseFloat(a.dataset.price);
+      case 'name_asc':   return a.dataset.name.localeCompare(b.dataset.name);
+      default: return 0;
+    }
+  });
+  visibleCards.forEach(c => grid.appendChild(c));
+}
+
+/* ── Smart Closing Time ── */
+async function getSuggestedTime() {
+  const id    = selectedProductId;
+  const stock = PRODUCT_DATA[id]?.stock || 1;
+  const btn   = document.getElementById('btnSmartTime');
+  btn.disabled = true; btn.textContent = 'Calculating…';
+
+  const resp = await fetch('/api/suggest_closing_time', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ product_id: id, stock })
+  });
+  const data = await resp.json();
+  btn.disabled = false; btn.innerHTML = '🧠 Suggest Optimal Closing Time';
+
+  if (data.error) { alert('Error: ' + data.error); return; }
+
+  document.getElementById('closingTimeInput').value = data.suggested_iso;
+  const box = document.getElementById('reasoningBox');
+  box.textContent = '🧠 ' + data.reasoning + ` → Suggested: +${data.hours_from_now}h from now.`;
+  box.classList.add('show');
+}
+
+/* ── AI Discount ── */
+async function getAiDiscount() {
+  const id      = selectedProductId;
+  const p       = PRODUCT_DATA[id];
+  const closing = document.getElementById('closingTimeInput').value;
+  const btn     = document.getElementById('btnGetDiscount');
+
+  if (!closing) { alert('Set a closing time first.'); return; }
+  btn.disabled = true;
+  document.getElementById('btnDiscText').textContent = 'Calculating…';
+
+  const resp = await fetch('/api/ai_discount_preview', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ product_id: id, category: p.category, original_price: p.price, stock: p.stock, expiry_iso: closing })
+  });
+  const data = await resp.json();
+  btn.disabled = false;
+  document.getElementById('btnDiscText').textContent = '🔄 Recalculate';
+
+  if (data.error) { alert('Error: ' + data.error); return; }
+
+  document.getElementById('aiResult').classList.add('show');
+  animateNum('aiPct', 0, data.discount_percent, 500);
+  document.getElementById('aiOrig').textContent  = '₹' + p.price.toFixed(2);
+  document.getElementById('aiSave').textContent  = '−₹' + data.savings.toFixed(2);
+  document.getElementById('aiFinal').textContent = '₹' + data.deal_price.toFixed(2);
+  document.getElementById('aiChip').textContent  = data.ai_powered ? '🤖 AI Powered' : '⏱ Rule-based';
+
+  if (!document.getElementById('discountOverride').value) {
+    document.getElementById('discountOverride').placeholder =
+      `AI suggests ${data.discount_percent}% — override or leave blank`;
+  }
+}
+
+function animateNum(elId, from, to, dur) {
+  const el = document.getElementById(elId);
+  const t0 = performance.now();
+  (function run(now) {
+    const p = Math.min((now - t0) / dur, 1);
+    const e = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(from + (to - from) * e);
+    if (p < 1) requestAnimationFrame(run);
+  })(performance.now());
+}
+</script>
+
+{% include "footer.html" %}

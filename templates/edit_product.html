@@ -1,0 +1,115 @@
+{% include "header.html" %}
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:#090c14; --panel:#0e1420; --surface:#131b2e; --border:rgba(255,255,255,0.06);
+  --amber:#f5a623; --amber-dim:rgba(245,166,35,0.12); --green:#22d47a;
+  --red:#ff4d6a; --blue:#4d9fff; --text:#e2e8f0; --muted:#4a5568; --sub:#7a8fa6;
+  --sidebar-w:240px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);min-height:100vh;}
+.rd-shell{display:flex;min-height:calc(100vh - 80px);}
+.rd-sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);padding:28px 16px;display:flex;flex-direction:column;gap:6px;position:sticky;top:80px;height:calc(100vh - 80px);overflow-y:auto;}
+.sb-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:14px 10px 6px;}
+.sb-link{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;color:var(--sub);text-decoration:none;font-size:14px;font-weight:600;transition:all 0.18s;border:1px solid transparent;}
+.sb-link:hover{background:var(--surface);color:var(--text);border-color:var(--border);}
+.sb-link.active{background:var(--amber-dim);color:var(--amber);border-color:rgba(245,166,35,0.2);}
+.sb-link .icon{font-size:16px;width:20px;text-align:center;}
+.sb-divider{height:1px;background:var(--border);margin:10px 0;}
+.ep-main{flex:1;padding:32px 36px;min-width:0;}
+.back-link{display:inline-flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:700;margin-bottom:28px;transition:color 0.2s;}
+.back-link:hover{color:var(--amber);}
+.ep-title{font-size:26px;font-weight:800;letter-spacing:-0.4px;margin-bottom:4px;}
+.ep-sub{font-size:13px;color:var(--muted);margin-bottom:32px;font-family:'JetBrains Mono',monospace;}
+.ep-card{background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:28px;margin-bottom:16px;max-width:660px;}
+.card-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:22px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+.f-group{margin-bottom:18px;}
+.f-label{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+.f-control,.f-select{width:100%;background:var(--bg) !important;border:1px solid rgba(255,255,255,0.08) !important;color:var(--text) !important;border-radius:11px !important;padding:12px 15px !important;font-size:14px !important;font-family:'Syne',sans-serif !important;transition:border-color 0.2s,box-shadow 0.2s !important;outline:none !important;}
+.f-control:focus,.f-select:focus{border-color:rgba(245,166,35,0.5) !important;box-shadow:0 0 0 3px rgba(245,166,35,0.08) !important;}
+textarea.f-control{resize:vertical;min-height:78px;}
+.f-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.dd-flash .alert{border-radius:10px;padding:12px 16px;font-size:13px;font-weight:600;border:none;margin-bottom:8px;}
+.dd-flash .alert-success{background:rgba(34,212,122,0.1);border-left:3px solid var(--green);color:#5effa0;}
+.dd-flash .alert-danger{background:rgba(255,77,106,0.1);border-left:3px solid var(--red);color:#ff8fa0;}
+.dd-flash .alert-warning{background:rgba(245,166,35,0.1);border-left:3px solid var(--amber);color:#ffd070;}
+.btn-save{width:100%;max-width:660px;background:linear-gradient(135deg,var(--amber),#ff8c42);color:#090c14;border:none;padding:15px;border-radius:13px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:all 0.25s;margin-top:8px;}
+.btn-save:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(245,166,35,0.35);}
+@media(max-width:900px){.rd-sidebar{display:none;}.ep-main{padding:20px 16px;}.f-row{grid-template-columns:1fr;}}
+</style>
+
+<div class="rd-shell">
+  <aside class="rd-sidebar">
+    <div class="sb-label">Main</div>
+    <a href="{{ url_for('retailer_dashboard') }}" class="sb-link"><span class="icon">📊</span> Dashboard</a>
+    <a href="{{ url_for('add_product') }}"        class="sb-link"><span class="icon">➕</span> Add to Inventory</a>
+    <a href="{{ url_for('launch_deal') }}"        class="sb-link"><span class="icon">⚡</span> Launch Deal</a>
+    <a href="{{ url_for('sales_history') }}"      class="sb-link"><span class="icon">📈</span> Sales History</a>
+    <div class="sb-divider"></div>
+    <div class="sb-label">Account</div>
+    <a href="{{ url_for('logout') }}" class="sb-link"><span class="icon">🚪</span> Logout</a>
+  </aside>
+
+  <main class="ep-main">
+    <a href="{{ url_for('retailer_dashboard') }}" class="back-link">← Back to Dashboard</a>
+    <div class="ep-title">Edit Product ✏️</div>
+    <p class="ep-sub">Editing: {{ product.name }}</p>
+
+    <div class="dd-flash">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat, msg in messages %}
+          <div class="alert alert-{{ cat }}">{{ msg }}</div>
+        {% endfor %}{% endif %}
+      {% endwith %}
+    </div>
+
+    <form method="POST" action="{{ url_for('edit_product', product_id=product.id) }}">
+      {{ form.hidden_tag() }}
+
+      <div class="ep-card">
+        <div class="card-lbl">📦 Product Details</div>
+        <div class="f-group">
+          <label class="f-label">{{ form.name.label.text }}</label>
+          {{ form.name(class="f-control") }}
+        </div>
+        <div class="f-group">
+          <label class="f-label">{{ form.description.label.text }}</label>
+          {{ form.description(class="f-control", rows=2) }}
+        </div>
+        <div class="f-row">
+          <div class="f-group">
+            <label class="f-label">{{ form.category.label.text }}</label>
+            {{ form.category(class="f-select") }}
+          </div>
+          <div class="f-group">
+            <label class="f-label">{{ form.original_price.label.text }}</label>
+            {{ form.original_price(class="f-control", placeholder="₹") }}
+          </div>
+        </div>
+        <div class="f-row">
+          <div class="f-group">
+            <label class="f-label">{{ form.stock.label.text }}</label>
+            {{ form.stock(class="f-control") }}
+          </div>
+          <div class="f-group">
+            <label class="f-label">{{ form.expiry_date.label.text }}</label>
+            {{ form.expiry_date(class="f-control") }}
+          </div>
+        </div>
+      </div>
+
+      <div class="ep-card">
+        <div class="card-lbl">🤖 AI Pricing</div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.7;">
+          Saving re-runs <strong style="color:var(--amber);">FlashMap ML</strong> with
+          updated values and real sales velocity. Discount is recalculated automatically.
+        </p>
+      </div>
+
+      {{ form.submit(class="btn-save") }}
+    </form>
+  </main>
+</div>
+{% include "footer.html" %}

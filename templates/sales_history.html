@@ -1,0 +1,114 @@
+{% include "header.html" %}
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{--bg:#090c14;--panel:#0e1420;--surface:#131b2e;--border:rgba(255,255,255,0.06);--amber:#f5a623;--amber-dim:rgba(245,166,35,0.12);--green:#22d47a;--red:#ff4d6a;--blue:#4d9fff;--text:#e2e8f0;--muted:#4a5568;--sub:#7a8fa6;--sidebar-w:240px;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);min-height:100vh;}
+.rd-shell{display:flex;min-height:calc(100vh - 80px);}
+.rd-sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);padding:28px 16px;display:flex;flex-direction:column;gap:6px;position:sticky;top:80px;height:calc(100vh - 80px);overflow-y:auto;}
+.sb-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:14px 10px 6px;}
+.sb-link{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;color:var(--sub);text-decoration:none;font-size:14px;font-weight:600;transition:all 0.18s;border:1px solid transparent;}
+.sb-link:hover{background:var(--surface);color:var(--text);border-color:var(--border);}
+.sb-link.active{background:var(--amber-dim);color:var(--amber);border-color:rgba(245,166,35,0.2);}
+.sb-link .icon{font-size:16px;width:20px;text-align:center;}
+.sb-divider{height:1px;background:var(--border);margin:10px 0;}
+.sh-main{flex:1;padding:32px 36px;min-width:0;}
+.page-hdr{margin-bottom:28px;}
+.page-title{font-size:24px;font-weight:800;letter-spacing:-0.4px;margin-bottom:4px;}
+.page-sub{font-size:13px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+.sum-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;}
+.sum-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;}
+.sum-card .s-val{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:600;color:var(--green);margin-bottom:4px;}
+.sum-card .s-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.sales-table-wrap{background:var(--panel);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
+.sales-table{width:100%;border-collapse:collapse;font-size:13px;}
+.sales-table thead tr{border-bottom:1px solid var(--border);}
+.sales-table th{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:14px 18px;text-align:left;}
+.sales-table td{padding:13px 18px;border-bottom:1px solid rgba(255,255,255,0.03);color:var(--text);}
+.sales-table tr:last-child td{border-bottom:none;}
+.sales-table tbody tr:hover{background:rgba(255,255,255,0.02);}
+.prod-name-sm{font-weight:700;}
+.mono{font-family:'JetBrains Mono',monospace;}
+.green{color:var(--green);}
+.muted-text{color:var(--muted);}
+.empty-state{padding:64px 20px;text-align:center;color:var(--muted);}
+.empty-state .e-icon{font-size:48px;display:block;margin-bottom:16px;}
+.empty-state h3{font-size:17px;color:var(--sub);}
+@media(max-width:900px){.rd-sidebar{display:none;}.sh-main{padding:20px 16px;}.sum-row{grid-template-columns:1fr 1fr;}}
+</style>
+
+<div class="rd-shell">
+  <aside class="rd-sidebar">
+    <div class="sb-label">Main</div>
+    <a href="{{ url_for('retailer_dashboard') }}" class="sb-link"><span class="icon">📊</span> Dashboard</a>
+    <a href="{{ url_for('add_product') }}"        class="sb-link"><span class="icon">➕</span> Add to Inventory</a>
+    <a href="{{ url_for('launch_deal') }}"        class="sb-link"><span class="icon">⚡</span> Launch Deal</a>
+    <a href="{{ url_for('sales_history') }}"      class="sb-link active"><span class="icon">📈</span> Sales History</a>
+    <div class="sb-divider"></div>
+    <div class="sb-label">Account</div>
+    <a href="{{ url_for('logout') }}" class="sb-link"><span class="icon">🚪</span> Logout</a>
+  </aside>
+
+  <main class="sh-main">
+    <div class="page-hdr">
+      <div class="page-title">📈 Sales History</div>
+      <div class="page-sub">All transactions for your products, newest first</div>
+    </div>
+
+    {% set total_txn  = sales | length %}
+    {% set total_units = sales | sum(attribute='quantity_sold') %}
+    {% set total_rev   = sales | map(attribute='selling_price') | list %}
+    <div class="sum-row">
+      <div class="sum-card">
+        <div class="s-val">{{ total_txn }}</div>
+        <div class="s-lbl">Total Transactions</div>
+      </div>
+      <div class="sum-card">
+        <div class="s-val">{{ total_units }}</div>
+        <div class="s-lbl">Units Sold</div>
+      </div>
+      <div class="sum-card">
+        <div class="s-val">₹{{ "%.0f"|format(sales | sum(attribute='selling_price')) }}</div>
+        <div class="s-lbl">Total Revenue</div>
+      </div>
+    </div>
+
+    <div class="sales-table-wrap">
+      {% if sales %}
+      <table class="sales-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Product</th><th>Customer</th>
+            <th>Qty</th><th>Sold At</th><th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in sales %}
+          <tr>
+            <td class="mono muted-text">{{ loop.index }}</td>
+            <td>
+              <div class="prod-name-sm">{{ s.product.name }}</div>
+              <span style="font-size:11px;color:var(--muted);">{{ s.product.category }}</span>
+            </td>
+            <td class="muted-text">{{ s.customer.name if s.customer else '—' }}</td>
+            <td class="mono">{{ s.quantity_sold }}</td>
+            <td class="mono green">₹{{ "%.2f"|format(s.selling_price) }}</td>
+            <td class="mono muted-text" style="font-size:12px;">
+              {{ s.timestamp.strftime('%d %b %Y, %H:%M') if s.timestamp else '—' }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state">
+        <span class="e-icon">📭</span>
+        <h3>No sales yet</h3>
+        <p style="font-size:13px;margin-top:8px;">Sales will appear here as customers grab your deals.</p>
+      </div>
+      {% endif %}
+    </div>
+  </main>
+</div>
+{% include "footer.html" %}

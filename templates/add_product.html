@@ -1,11 +1,10 @@
-
 {% include "header.html" %}
 
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
 /* ═══════════════════════════════════════════════════════════════
-   ADD PRODUCT — DealDrop
+   ADD PRODUCT — DealDrop  (Stock Add Only — no discount here)
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
@@ -20,6 +19,7 @@
   --text:    #e8edf5;
   --muted:   #4a5568;
   --sub:     #8896a9;
+  --sidebar-w: 240px;
 }
 
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
@@ -27,294 +27,129 @@
 body {
   background: var(--bg);
   font-family: 'Plus Jakarta Sans', sans-serif;
-  color: var(--text);
-  min-height: 100vh;
+  color: var(--text); min-height: 100vh;
 }
 
 body::before {
-  content:'';
-  position:fixed; inset:0;
+  content:''; position:fixed; inset:0;
   background:
-    radial-gradient(ellipse 60% 50% at 15% 25%, rgba(255,95,109,0.07) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 80% 70%, rgba(0,212,255,0.06) 0%, transparent 60%);
+    radial-gradient(ellipse 60% 50% at 15% 25%, rgba(255,95,109,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 80% 70%, rgba(0,212,255,0.05) 0%, transparent 60%);
   pointer-events:none; z-index:0;
 }
 
-.ap-wrap {
-  max-width: 680px;
-  margin: 0 auto;
-  padding: 40px 24px 80px;
-  position: relative;
-  z-index: 1;
+/* ── SHELL (sidebar + main) ── */
+.rd-shell { display:flex; min-height:calc(100vh - 80px); }
+
+.rd-sidebar {
+  width:var(--sidebar-w); flex-shrink:0;
+  background:#0e1420; border-right:1px solid rgba(255,255,255,0.055);
+  padding:28px 16px; display:flex; flex-direction:column; gap:6px;
+  position:sticky; top:80px; height:calc(100vh - 80px); overflow-y:auto;
+}
+.sb-label { font-family:'Fira Code',monospace; font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); padding:14px 10px 6px; }
+.sb-link  { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; color:var(--sub); text-decoration:none; font-size:14px; font-weight:600; transition:all 0.18s; border:1px solid transparent; }
+.sb-link:hover  { background:var(--surface); color:var(--text); border-color:rgba(255,255,255,0.07); }
+.sb-link.active { background:rgba(255,95,109,0.1); color:var(--coral); border-color:rgba(255,95,109,0.22); }
+.sb-link .icon  { font-size:16px; width:20px; text-align:center; }
+.sb-divider { height:1px; background:rgba(255,255,255,0.055); margin:10px 0; }
+
+/* ── MAIN ── */
+.ap-main {
+  flex:1; position:relative; z-index:1;
+  padding: 36px 40px 80px; min-width:0;
 }
 
 .back-link {
   display: inline-flex; align-items: center; gap: 6px;
   color: var(--muted); text-decoration: none;
-  font-size: 13px; font-weight: 600;
-  margin-bottom: 28px;
-  transition: color 0.2s;
+  font-size: 13px; font-weight: 600; margin-bottom: 28px; transition: color 0.2s;
 }
 .back-link:hover { color: var(--coral); }
 
 .ap-title {
-  font-size: 28px; font-weight: 800; letter-spacing: -0.5px;
+  font-size: 27px; font-weight: 800; letter-spacing: -0.5px;
   background: linear-gradient(135deg, var(--text), var(--sub));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   margin-bottom: 5px;
 }
 
 .ap-sub {
   font-size: 13px; color: var(--muted); margin-bottom: 32px; font-weight: 500;
+  font-family: 'Fira Code', monospace;
 }
 
-/* ── CARD ────────────────────────────────────────────── */
+/* ── CARD ── */
 .ap-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 30px;
-  margin-bottom: 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 30px; margin-bottom: 16px; max-width: 680px;
 }
 
 .ap-card-label {
-  font-family: 'Fira Code', monospace;
-  font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase;
-  color: var(--muted); font-weight: 500;
-  margin-bottom: 22px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--border);
+  font-family: 'Fira Code', monospace; font-size: 10px; letter-spacing: 2.5px;
+  text-transform: uppercase; color: var(--muted); font-weight: 500;
+  margin-bottom: 22px; padding-bottom: 14px; border-bottom: 1px solid var(--border);
   display: flex; align-items: center; gap: 8px;
 }
 
-/* ── FORM ELEMENTS ───────────────────────────────────── */
+/* ── FORM ELEMENTS ── */
 .f-group { margin-bottom: 18px; }
 
 .f-label {
-  display: block;
-  font-family: 'Fira Code', monospace;
+  display: block; font-family: 'Fira Code', monospace;
   font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase;
-  color: var(--muted); font-weight: 500;
-  margin-bottom: 7px;
+  color: var(--muted); font-weight: 500; margin-bottom: 7px;
 }
 
 .f-control, .f-select {
-  width: 100%;
-  background: var(--bg) !important;
-  border: 1px solid rgba(255,255,255,0.09) !important;
-  color: var(--text) !important;
-  border-radius: 11px !important;
-  padding: 12px 15px !important;
-  font-size: 14px !important;
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
-  transition: border-color 0.2s, box-shadow 0.2s !important;
-  outline: none !important;
-  -webkit-appearance: none;
-  appearance: none;
+  width: 100%; background: var(--bg) !important; border: 1px solid rgba(255,255,255,0.09) !important;
+  color: var(--text) !important; border-radius: 11px !important; padding: 12px 15px !important;
+  font-size: 14px !important; font-family: 'Plus Jakarta Sans', sans-serif !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important; outline: none !important;
+  -webkit-appearance: none; appearance: none;
 }
-
 .f-control:focus, .f-select:focus {
   border-color: rgba(0,212,255,0.5) !important;
-  box-shadow: 0 0 0 3px rgba(0,212,255,0.1) !important;
+  box-shadow: 0 0 0 3px rgba(0,212,255,0.09) !important;
 }
-
 .f-control::placeholder { color: rgba(255,255,255,0.15) !important; }
-
 textarea.f-control { resize: vertical; min-height: 78px; }
 
 .f-hint {
-  font-family: 'Fira Code', monospace;
-  font-size: 11px; color: var(--muted);
-  margin-top: 5px;
+  font-family: 'Fira Code', monospace; font-size: 11px; color: var(--muted); margin-top: 5px;
 }
 
 .f-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
-/* ── FLASH ───────────────────────────────────────────── */
-.dd-flash { margin-bottom: 20px; }
-.dd-flash .alert {
-  border-radius: 10px; padding: 13px 16px; font-size: 13px; font-weight: 600; border: none; margin-bottom: 8px;
+/* ── FLASH ── */
+.dd-flash { margin-bottom: 20px; max-width: 680px; }
+.dd-flash .alert { border-radius: 10px; padding: 13px 16px; font-size: 13px; font-weight: 600; border: none; margin-bottom: 8px; }
+.dd-flash .alert-success { background:rgba(184,255,87,0.1);  border-left:3px solid var(--lime);  color:#c8ff70; }
+.dd-flash .alert-danger  { background:rgba(255,95,109,0.1);  border-left:3px solid var(--coral); color:#ff8c96; }
+.dd-flash .alert-warning { background:rgba(251,191,36,0.1);  border-left:3px solid #fbbf24;      color:#fcd34d; }
+
+/* ── INFO CALLOUT ── */
+.info-callout {
+  display: flex; align-items: flex-start; gap: 14px;
+  background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.15);
+  border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; max-width: 680px;
 }
-.dd-flash .alert-success { background:rgba(184,255,87,0.1); border-left:3px solid var(--lime); color:#c8ff70; }
-.dd-flash .alert-danger  { background:rgba(255,95,109,0.1); border-left:3px solid var(--coral); color:#ff8c96; }
-.dd-flash .alert-warning { background:rgba(251,191,36,0.1); border-left:3px solid #fbbf24; color:#fcd34d; }
-
-/* ── GET AI DISCOUNT BUTTON ──────────────────────────── */
-.btn-ai {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  background: var(--surface2);
-  border: 1.5px dashed rgba(0,212,255,0.4);
-  color: var(--cyan);
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 14px; font-weight: 800;
-  padding: 14px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.25s;
-  letter-spacing: 0.3px;
-  margin-top: 4px;
-}
-
-.btn-ai:hover {
-  background: rgba(0,212,255,0.08);
-  border-color: var(--cyan);
-  box-shadow: 0 0 20px rgba(0,212,255,0.15), inset 0 0 20px rgba(0,212,255,0.03);
-  transform: translateY(-1px);
-}
-
-.btn-ai:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn-ai .ai-spinner {
-  width: 16px; height: 16px;
-  border: 2px solid rgba(0,212,255,0.3);
-  border-top-color: var(--cyan);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  display: none;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ── AI RESULT PANEL ─────────────────────────────────── */
-.ai-result {
-  margin-top: 16px;
-  background: var(--bg);
-  border: 1px solid rgba(0,212,255,0.2);
-  border-radius: 16px;
-  overflow: hidden;
-  display: none; /* shown by JS */
-  animation: slideDown 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
-}
-
-@keyframes slideDown {
-  from { opacity:0; transform:translateY(-12px) scaleY(0.95); }
-  to   { opacity:1; transform:translateY(0)     scaleY(1); }
-}
-
-.ai-result-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 18px;
-  background: rgba(0,212,255,0.06);
-  border-bottom: 1px solid rgba(0,212,255,0.15);
-}
-
-.ai-chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: rgba(0,212,255,0.12);
-  border: 1px solid rgba(0,212,255,0.3);
-  color: var(--cyan);
+.info-callout .ic-icon { font-size: 22px; flex-shrink:0; margin-top:1px; }
+.info-callout p {
+  font-size: 13px; color: var(--sub); line-height: 1.7; margin:0;
   font-family: 'Fira Code', monospace;
-  font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
-  padding: 4px 11px; border-radius: 20px;
 }
-.ai-chip::before {
-  content:''; width:6px; height:6px; background:var(--cyan); border-radius:50%;
-  animation: blink 1.5s infinite;
-}
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.info-callout strong { color: var(--cyan); }
 
-.ai-result-header .ai-tag {
-  font-family: 'Fira Code', monospace;
-  font-size: 11px; color: var(--muted);
-}
-
-/* Big discount number */
-.ai-body {
-  padding: 22px 20px;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.ai-pct-wrap {
-  text-align: center;
-  min-width: 90px;
-}
-
-.ai-pct {
-  font-family: 'Fira Code', monospace;
-  font-size: 52px; font-weight: 600;
-  line-height: 1;
-  background: linear-gradient(135deg, var(--cyan), var(--lime));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
-  transition: all 0.4s;
-}
-
-.ai-pct-label {
-  font-family: 'Fira Code', monospace;
-  font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
-  color: var(--muted); margin-top: 3px;
-}
-
-/* Divider */
-.ai-divider {
-  width: 1px; align-self: stretch;
-  background: rgba(255,255,255,0.07);
-  flex-shrink: 0;
-}
-
-/* Price breakdown */
-.ai-prices { flex: 1; }
-
-.ai-price-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 7px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  font-size: 13px;
-}
-.ai-price-row:last-child { border-bottom: none; }
-.ai-price-row .lbl { color: var(--muted); font-family: 'Fira Code', monospace; font-size: 11px; }
-.ai-price-row .val { font-family: 'Fira Code', monospace; font-weight: 600; color: var(--sub); }
-.ai-price-row .val.strike { text-decoration: line-through; color: var(--muted); }
-.ai-price-row .val.final  { color: var(--lime); font-size: 18px; }
-.ai-price-row .val.save   { color: var(--coral); }
-
-/* Auto-resolved params info */
-.ai-params {
-  padding: 12px 20px;
-  background: rgba(255,255,255,0.02);
-  border-top: 1px solid var(--border);
-  display: flex; gap: 12px; flex-wrap: wrap;
-}
-
-.ai-param-pill {
-  display: inline-flex; align-items: center; gap: 5px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--border);
-  color: var(--muted);
-  font-family: 'Fira Code', monospace;
-  font-size: 10px; padding: 3px 10px; border-radius: 20px;
-}
-.ai-param-pill span { color: var(--sub); }
-
-/* ── SUBMIT ──────────────────────────────────────────── */
+/* ── SUBMIT BUTTON ── */
 .btn-submit {
-  width: 100%;
+  width: 100%; max-width: 680px;
   background: linear-gradient(135deg, var(--coral), #ff8c42);
-  color: #fff;
-  border: none;
-  padding: 15px;
-  border-radius: 13px;
+  color: #fff; border: none; padding: 15px; border-radius: 13px;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 15px; font-weight: 800;
-  cursor: pointer;
-  transition: all 0.25s;
-  letter-spacing: 0.3px;
-  margin-top: 8px;
-  position: relative;
-  overflow: hidden;
+  font-size: 15px; font-weight: 800; cursor: pointer;
+  transition: all 0.25s; letter-spacing: 0.3px; margin-top: 8px;
+  position: relative; overflow: hidden;
 }
 .btn-submit::before {
   content:''; position:absolute; inset:0;
@@ -323,233 +158,102 @@ textarea.f-control { resize: vertical; min-height: 78px; }
 }
 .btn-submit:hover {
   transform:translateY(-2px);
-  box-shadow: 0 12px 32px rgba(255,95,109,0.4);
+  box-shadow: 0 12px 32px rgba(255,95,109,0.38);
 }
 .btn-submit:hover::before { opacity:1; }
+
+@media (max-width:900px) {
+  .rd-sidebar { display:none; }
+  .ap-main { padding:20px 16px 60px; }
+  .f-row { grid-template-columns:1fr; }
+}
 </style>
 
-<div class="ap-wrap">
+<div class="rd-shell">
 
-  <a href="{{ url_for('retailer_dashboard') }}" class="back-link">← Back to Dashboard</a>
+  <!-- Sidebar -->
+  <aside class="rd-sidebar">
+    <div class="sb-label">Main</div>
+    <a href="{{ url_for('retailer_dashboard') }}" class="sb-link"><span class="icon">📊</span> Dashboard</a>
+    <a href="{{ url_for('add_product') }}"        class="sb-link active"><span class="icon">📦</span> Add Product</a>
+    <a href="{{ url_for('launch_deal') }}"        class="sb-link"><span class="icon">🚀</span> Launch Deal</a>
+    <a href="{{ url_for('sales_history') }}"      class="sb-link"><span class="icon">📈</span> Sales History</a>
+    <div class="sb-divider"></div>
+    <div class="sb-label">Account</div>
+    <a href="{{ url_for('logout') }}" class="sb-link"><span class="icon">🚪</span> Logout</a>
+  </aside>
 
-  <div class="ap-title">Launch a Flash Deal ⚡</div>
-  <p class="ap-sub">Fill in your product details — then let AI compute the optimal discount for you.</p>
+  <!-- Main -->
+  <main class="ap-main">
 
-  <div class="dd-flash">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}{% for cat, msg in messages %}
-        <div class="alert alert-{{ cat }}">{{ msg }}</div>
-      {% endfor %}{% endif %}
-    {% endwith %}
-  </div>
+    <a href="{{ url_for('retailer_dashboard') }}" class="back-link">← Back to Dashboard</a>
 
-  <form method="POST" action="{{ url_for('add_product') }}" id="dealForm">
-    {{ form.hidden_tag() }}
+    <div class="ap-title">Add to Inventory 📦</div>
+    <p class="ap-sub">Enter product details to add it to your stock.</p>
 
-    <!-- Card 1: Product Info -->
-    <div class="ap-card">
-      <div class="ap-card-label">📦 Product Details</div>
-
-      <div class="f-group">
-        <label class="f-label">{{ form.name.label.text }}</label>
-        {{ form.name(class="f-control", placeholder="e.g. Amul Butter 500g") }}
-      </div>
-
-      <div class="f-group">
-        <label class="f-label">{{ form.description.label.text }}</label>
-        {{ form.description(class="f-control", rows=2, placeholder="Short description — optional") }}
-      </div>
-
-      <div class="f-row">
-        <div class="f-group">
-          <label class="f-label">{{ form.category.label.text }}</label>
-          {{ form.category(class="f-select", id="fieldCategory") }}
-        </div>
-        <div class="f-group">
-          <label class="f-label">{{ form.original_price.label.text }}</label>
-          {{ form.original_price(class="f-control", placeholder="₹", id="fieldPrice") }}
-        </div>
-      </div>
-
-      <div class="f-row">
-        <div class="f-group">
-          <label class="f-label">{{ form.stock.label.text }}</label>
-          {{ form.stock(class="f-control", placeholder="units", id="fieldStock") }}
-        </div>
-        <div class="f-group">
-          <label class="f-label">{{ form.expiry_date.label.text }}</label>
-          {{ form.expiry_date(class="f-control", id="fieldExpiry") }}
-        </div>
-      </div>
-
-      <div class="f-hint" style="margin-top:-10px; margin-bottom:4px;">
-        ⏰ Set when you want the deal to expire — not the product's physical expiry.
-      </div>
+    <div class="dd-flash">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for cat, msg in messages %}
+          <div class="alert alert-{{ cat }}">{{ msg }}</div>
+        {% endfor %}{% endif %}
+      {% endwith %}
     </div>
 
-    <!-- Card 2: AI Pricing -->
-    <div class="ap-card">
-      <div class="ap-card-label">🤖 AI Pricing Engine</div>
-
-      <p style="font-size:13px; color:var(--muted); margin-bottom:20px; line-height:1.7;">
-        Our <strong style="color:var(--cyan);">FlashMap ML model</strong> auto-detects your store's traffic tier
-        from your city, infers demand type from category, and estimates sales velocity —
-        then computes the <em style="color:var(--lime);">optimal starting discount</em> for maximum clearance.
-        No manual inputs needed.
+    <!-- Info callout -->
+    <div class="info-callout">
+      <span class="ic-icon">💡</span>
+      <p>
+        Adding a product saves it to your <strong>inventory / stocks table</strong> with deal
+        active immediately. To re-launch a paused product as a deal with
+        <strong>AI-computed pricing</strong>, use <strong>Launch Deal ⚡</strong>.
       </p>
-
-      <!-- THE BUTTON -->
-      <button type="button" class="btn-ai" id="btnGetDiscount" onclick="getAiDiscount()">
-        <div class="ai-spinner" id="aiSpinner"></div>
-        <span id="btnAiText">🤖 Get AI Discount</span>
-      </button>
-
-      <!-- RESULT PANEL (hidden until button clicked) -->
-      <div class="ai-result" id="aiResult">
-
-        <div class="ai-result-header">
-          <span class="ai-chip" id="aiChip">AI Engine</span>
-          <span class="ai-tag" id="aiTagLine">Powered by FlashMap · scikit-learn</span>
-        </div>
-
-        <div class="ai-body">
-          <div class="ai-pct-wrap">
-            <div class="ai-pct" id="aiPct">0</div>
-            <div class="ai-pct-label">% OFF</div>
-          </div>
-          <div class="ai-divider"></div>
-          <div class="ai-prices">
-            <div class="ai-price-row">
-              <span class="lbl">Original Price</span>
-              <span class="val strike" id="aiOrig">—</span>
-            </div>
-            <div class="ai-price-row">
-              <span class="lbl">AI Discount</span>
-              <span class="val save" id="aiSave">—</span>
-            </div>
-            <div class="ai-price-row">
-              <span class="lbl">Deal Price</span>
-              <span class="val final" id="aiFinal">—</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Auto-resolved params display (transparency to retailer) -->
-        <div class="ai-params" id="aiParams"></div>
-
-      </div>
-
     </div>
 
-    <!-- Submit -->
-    {{ form.submit(class="btn-submit") }}
+    <form method="POST" action="{{ url_for('add_product') }}">
+      {{ form.hidden_tag() }}
 
-  </form>
+      <!-- Card 1: Product Info -->
+      <div class="ap-card">
+        <div class="ap-card-label">📦 Product Details</div>
+
+        <div class="f-group">
+          <label class="f-label">{{ form.name.label.text }}</label>
+          {{ form.name(class="f-control", placeholder="e.g. Amul Butter 500g") }}
+        </div>
+
+        <div class="f-group">
+          <label class="f-label">{{ form.description.label.text }}</label>
+          {{ form.description(class="f-control", rows=2, placeholder="Short description — optional") }}
+        </div>
+
+        <div class="f-row">
+          <div class="f-group">
+            <label class="f-label">{{ form.category.label.text }}</label>
+            {{ form.category(class="f-select") }}
+          </div>
+          <div class="f-group">
+            <label class="f-label">{{ form.original_price.label.text }}</label>
+            {{ form.original_price(class="f-control", placeholder="e.g. 299") }}
+          </div>
+        </div>
+
+        <div class="f-row">
+          <div class="f-group">
+            <label class="f-label">{{ form.stock.label.text }}</label>
+            {{ form.stock(class="f-control", placeholder="units in stock") }}
+          </div>
+          <div class="f-group">
+            <label class="f-label">{{ form.expiry_date.label.text }}</label>
+            {{ form.expiry_date(class="f-control") }}
+            <div class="f-hint">⏰ Deal closes at this time, not physical expiry.</div>
+          </div>
+        </div>
+      </div>
+
+      {{ form.submit(class="btn-submit") }}
+
+    </form>
+  </main>
 </div>
-
-<script>
-async function getAiDiscount() {
-  const category  = document.getElementById('fieldCategory').value;
-  const price     = document.getElementById('fieldPrice').value;
-  const stock     = document.getElementById('fieldStock').value;
-  const expiry    = document.getElementById('fieldExpiry').value;
-
-  // Basic validation
-  if (!category || !price || !stock || !expiry) {
-    alert('Please fill in Category, Price, Stock, and Expiry first.');
-    return;
-  }
-
-  // Show loading state
-  const btn     = document.getElementById('btnGetDiscount');
-  const spinner = document.getElementById('aiSpinner');
-  const btnText = document.getElementById('btnAiText');
-  btn.disabled  = true;
-  spinner.style.display = 'block';
-  btnText.textContent   = 'Computing…';
-
-  try {
-    const resp = await fetch('/api/ai_discount_preview', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        category,
-        original_price: parseFloat(price),
-        stock:          parseInt(stock),
-        expiry_iso:     expiry,
-      })
-    });
-
-    const data = await resp.json();
-
-    if (data.error) {
-      alert('Error: ' + data.error);
-      return;
-    }
-
-    renderResult(data, parseFloat(price));
-
-  } catch(e) {
-    alert('Network error. Please try again.');
-    console.error(e);
-  } finally {
-    btn.disabled = false;
-    spinner.style.display = 'none';
-    btnText.textContent   = '🔄 Recalculate';
-  }
-}
-
-function renderResult(data, originalPrice) {
-  const { discount_percent, deal_price, savings, ai_powered, store_tier, demand_type, velocity } = data;
-
-  // Show panel
-  const panel = document.getElementById('aiResult');
-  panel.style.display = 'block';
-  // Re-trigger animation
-  panel.style.animation = 'none';
-  panel.offsetHeight;
-  panel.style.animation = '';
-
-  // Animate percent counter
-  animateNum('aiPct', 0, discount_percent, 600);
-
-  // Price breakdown
-  document.getElementById('aiOrig').textContent  = '₹' + originalPrice.toFixed(2);
-  document.getElementById('aiSave').textContent  = '−₹' + savings.toFixed(2);
-  document.getElementById('aiFinal').textContent = '₹' + deal_price.toFixed(2);
-
-  // Chip + tagline
-  const chip = document.getElementById('aiChip');
-  const tag  = document.getElementById('aiTagLine');
-  if (ai_powered) {
-    chip.textContent = '🤖 AI Powered';
-    tag.textContent  = 'FlashMap ML · scikit-learn GBR';
-  } else {
-    chip.textContent = '⏱ Rule-based';
-    tag.textContent  = 'Fallback: time-based pricing';
-  }
-
-  // Auto-resolved params pills
-  const tierLabel = { 'High_Traffic':'🔴 High Traffic', 'Med_Traffic':'🟠 Med Traffic', 'Low_Traffic':'🟡 Low Traffic' };
-  document.getElementById('aiParams').innerHTML = `
-    <div class="ai-param-pill">🏪 Store Tier <span>${tierLabel[store_tier] || store_tier}</span></div>
-    <div class="ai-param-pill">📊 Demand <span>${demand_type}</span></div>
-    <div class="ai-param-pill">📦 Velocity <span>~${velocity}/day</span></div>
-    <div class="ai-param-pill" style="color:#4ade80; border-color:rgba(74,222,128,0.25);">✅ Auto-resolved by backend</div>
-  `;
-}
-
-function animateNum(elId, from, to, duration) {
-  const el  = document.getElementById(elId);
-  const t0  = performance.now();
-  const run = (now) => {
-    const p = Math.min((now - t0) / duration, 1);
-    const e = 1 - Math.pow(1 - p, 3); // ease-out cubic
-    el.textContent = Math.round(from + (to - from) * e);
-    if (p < 1) requestAnimationFrame(run);
-  };
-  requestAnimationFrame(run);
-}
-</script>
 
 {% include "footer.html" %}
