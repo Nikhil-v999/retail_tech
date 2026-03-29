@@ -23,7 +23,11 @@ except ImportError:
     print("⚠️  geopy not installed. Run: pip install geopy")
 
 from forms import (RegisterForm, LoginForm, AddProductForm,
-                   EditProductForm, LaunchDealForm, UpdateAddressForm)
+                   EditProductForm, LaunchDealForm, UpdateAddressForm,
+                   WishlistItemForm)
+
+# ── Wishlist Agent (background semantic matcher) ──────────────────────────────
+from wishlist_agent import run_in_background
 
 # ═══════════════════════════════════════════════════════════════
 #  APP SETUP
@@ -150,16 +154,7 @@ def geocode_address(address_string: str) -> tuple[float | None, float | None, st
 # ═══════════════════════════════════════════════════════════════
 
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """
-    Calculates the great-circle distance between two GPS coordinates.
-
-    Uses the Haversine formula — accurate to within ~0.3% for distances
-    up to ~500 km, which comfortably covers any hyperlocal use-case.
-
-    Returns:
-        Distance in kilometres (float).
-    """
-    R = 6_371.0  # Mean Earth radius in km
+    R = 6_371.0
     phi1, phi2   = math.radians(lat1), math.radians(lat2)
     dphi         = math.radians(lat2 - lat1)
     dlambda      = math.radians(lon2 - lon1)
@@ -174,28 +169,7 @@ def calculate_relevance_score(
     distance_km: float | None,
     days_left: float,
 ) -> float:
-    """
-    Composite deal-relevance score for the customer discovery feed.
-
-    Formula (as specified):
-        Score = (50 × Discount% / 100)
-              - (10 × Distance_km)
-              + (30 × 1 / Days_Left)
-
-    Design rationale:
-        • Discount term  — reward steeper discounts (max contribution ~50)
-        • Distance term  — penalise far-away deals; 0 penalty if coords unknown
-        • Urgency term   — boost deals expiring soon (rises steeply as → 0 days)
-
-    Args:
-        discount_percent: 0–100
-        distance_km:      None if either party has no coordinates stored
-        days_left:        fractional days until expiry
-
-    Returns:
-        float — higher is more relevant; list should be sorted descending.
-    """
-    safe_days    = max(0.01, days_left)          # floor to avoid ZeroDivisionError
+    safe_days    = max(0.01, days_left)
     dist_penalty = 10.0 * distance_km if distance_km is not None else 0.0
     return (50.0 * discount_percent / 100.0) - dist_penalty + (30.0 / safe_days)
 
@@ -260,10 +234,6 @@ def predict_discount(store_tier, category, demand_type,
 
 
 def _time_based_discount(hours_left: float) -> float:
-    """
-    Fallback tiered pricing when ML is unavailable.
-    >24h → 10%  |  >12h → 25%  |  >6h → 40%  |  ≤6h → 60%
-    """
     if   hours_left > 24: return 0.10
     elif hours_left > 12: return 0.25
     elif hours_left > 6:  return 0.40
@@ -295,23 +265,15 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(200), nullable=False)
     name     = db.Column(db.String(100), nullable=False)
     role     = db.Column(db.String(20),  nullable=False)
-
-    # ── UPDATED location fields ───────────────────────────────────────────────
-    # 'city'    : kept for backward-compat & store-tier inference; derived from
-    #             geocoding during registration (may be None for legacy rows).
-    # 'address' : the raw free-text address the user supplied.
-    # 'lat/lon' : WGS-84 decimal degrees; None until first geocode succeeds.
-    #
-    # POLICY: Retailer lat/lon is set ONCE at registration and never changes.
-    #         Customers may update their location via /update_location.
     city    = db.Column(db.String(100), nullable=True)
     address = db.Column(db.String(300), nullable=True)
     lat     = db.Column(db.Float,       nullable=True)
     lon     = db.Column(db.Float,       nullable=True)
-    # ─────────────────────────────────────────────────────────────────────────
 
     products = db.relationship('Product', backref='retailer', lazy=True,
                                cascade='all, delete-orphan')
+    wishlist_items = db.relationship('WishlistItem', backref='user', lazy=True,
+                                     cascade='all, delete-orphan')
 
 
 class Product(db.Model):
@@ -351,22 +313,28 @@ class Product(db.Model):
     def is_expired(self):
         return self.hours_left <= 0
 
+    # ── FIX 1: No discount until a deal is explicitly launched ──────────────
     @property
     def current_price(self):
-        discount = (float(self.ai_suggested_discount)
-                    if self.ai_suggested_discount is not None
-                    else _time_based_discount(self.hours_left))
-        return round(self.original_price * (1 - discount), 2)
+        """
+        Returns full original price when no deal has been launched
+        (ai_suggested_discount is None — product was added via Add Product only).
+        Returns discounted price only after Launch Deal sets ai_suggested_discount.
+        """
+        if self.ai_suggested_discount is None:
+            return round(self.original_price, 2)
+        return round(self.original_price * (1 - float(self.ai_suggested_discount)), 2)
 
+    # ── FIX 2: 0% discount until a deal is explicitly launched ─────────────
     @property
     def discount_percent(self):
-        if self.ai_suggested_discount is not None:
-            return round(self.ai_suggested_discount * 100)
-        h = self.hours_left
-        if h > 24: return 10
-        if h > 12: return 25
-        if h > 6:  return 40
-        return 60
+        """
+        Returns 0 when no deal has been launched (ai_suggested_discount is None).
+        Returns the AI/override discount only after Launch Deal.
+        """
+        if self.ai_suggested_discount is None:
+            return 0
+        return round(self.ai_suggested_discount * 100)
 
     @property
     def urgency_level(self):
@@ -399,7 +367,6 @@ class Sale(db.Model):
 class Notification(db.Model):
     """
     ntype: 'alert' | 'deal' | 'system'
-    Stored in DB — survives page reloads and sessions.
     """
     __tablename__ = 'notification'
     id         = db.Column(db.Integer, primary_key=True)
@@ -410,6 +377,42 @@ class Notification(db.Model):
     read       = db.Column(db.Boolean,     nullable=False, default=False)
     created_at = db.Column(db.DateTime,    default=lambda: datetime.now(timezone.utc))
     user       = db.relationship('User', foreign_keys=[user_id])
+
+
+# ═══════════════════════════════════════════════════════════════
+#  NEW: WISHLIST MODELS
+# ═══════════════════════════════════════════════════════════════
+
+class WishlistItem(db.Model):
+    """
+    DB-persisted wishlist item with semantic Smart-Watch capabilities.
+
+    Constraints:
+      • A user may have many items.
+      • No exact duplicates per user (user_id + item_name unique together).
+    """
+    __tablename__ = 'wishlist_item'
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'item_name', name='uq_user_wishitem'),
+    )
+
+    id                  = db.Column(db.Integer, primary_key=True)
+    user_id             = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    item_name           = db.Column(db.String(200), nullable=False)
+    max_price_threshold = db.Column(db.Float, nullable=True)  # None = no limit
+    created_at          = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class WishlistNotifLog(db.Model):
+    """
+    Deduplication log: prevents sending more than one notification per
+    user–deal pair within a 24-hour window.
+    """
+    __tablename__ = 'wishlist_notif_log'
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey('user.id'),    nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    sent_at    = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 @login_manager.user_loader
@@ -430,13 +433,6 @@ def push_notification(user_id: int, title: str, body: str, ntype: str = 'system'
 
 
 def _auto_alerts(retailer_id: int):
-    """
-    Runs on every dashboard load. Pushes deduped notifications for:
-    - Low stock     : stock ≤ 5, not expired
-    - Expiring soon : hours_left ≤ 6, deal active
-    - Unsold        : 0 sales after 6+ hours live
-    Dedup key: title string vs existing unread titles (no spam on refresh).
-    """
     products = Product.query.filter_by(retailer_id=retailer_id).all()
     existing = {
         n.title for n in
@@ -466,7 +462,7 @@ def _auto_alerts(retailer_id: int):
                     if t not in existing:
                         push_notification(retailer_id, t,
                             f"0 sales after {age_h:.0f}h. "
-                            "Try increasing the discount.", ntype='alert')
+                            "Try launching a deal with a discount.", ntype='alert')
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -521,21 +517,15 @@ def register():
             flash("Account already exists. Please login.", "warning")
             return redirect(url_for("login"))
 
-        # ── Phase 1: Geocode the address once at registration ─────────────────
-        # Geocoding happens synchronously here. On failure we still create the
-        # account — coordinates are simply left NULL and the app degrades to
-        # city-name-based tiers / no distance filtering.
         lat, lon, geocoded_city = geocode_address(form.address.data)
 
         if lat is None:
-            # Non-fatal: warn but allow registration to proceed.
             flash(
                 "⚠️ We couldn't pinpoint your exact address on the map — "
                 "try a more specific address later. Your account has been created.",
                 "warning"
             )
 
-        # Derive city for store-tier inference (fall back to first token of address)
         city_for_tier = geocoded_city or form.address.data.split(",")[0].strip()
 
         new_user = User(
@@ -544,7 +534,7 @@ def register():
             password = generate_password_hash(form.password.data),
             role     = role,
             address  = form.address.data,
-            city     = city_for_tier,   # still used by infer_store_tier
+            city     = city_for_tier,
             lat      = lat,
             lon      = lon,
         )
@@ -617,38 +607,43 @@ def retailer_dashboard():
     return render_template("retail_dash.html", **kpis)
 
 
+# ── FIX 3: add_product — inventory only, no discount computed ──────────────
 @app.route("/add_product", methods=["GET", "POST"])
 @login_required
 def add_product():
     if (r := _require_retailer()): return r
     form = AddProductForm()
     if form.validate_on_submit():
-        category     = form.category.data
-        expiry       = form.expiry_date.data
-        expiry_aware = expiry.replace(tzinfo=timezone.utc) if expiry.tzinfo is None else expiry
-        days_left    = max(0.0, (expiry_aware - datetime.now(timezone.utc)).total_seconds() / 86400)
-        store_tier   = infer_store_tier(current_user.city)
-        demand_type  = infer_demand_type(category)
-        velocity     = infer_velocity(category)
-        ai_discount  = predict_discount(store_tier, category, demand_type,
-                                        days_left, form.stock.data, velocity)
-        d = ai_discount if ai_discount is not None else _time_based_discount(days_left * 24)
+        category    = form.category.data
+        expiry      = form.expiry_date.data
+        store_tier  = infer_store_tier(current_user.city)
+        demand_type = infer_demand_type(category)
+        velocity    = infer_velocity(category)
 
+        # ai_suggested_discount is intentionally left None here.
+        # This means current_price == original_price (0% discount)
+        # and discount_percent == 0 until the retailer uses Launch Deal.
         product = Product(
             name=form.name.data, description=form.description.data,
             category=category, original_price=form.original_price.data,
             stock=form.stock.data, expiry_date=expiry,
             store_tier=store_tier, demand_type=demand_type,
-            velocity=velocity, ai_suggested_discount=ai_discount,
+            velocity=velocity, ai_suggested_discount=None,
             deal_active=True, retailer_id=current_user.id,
         )
         db.session.add(product)
         push_notification(current_user.id,
-            f"⚡ Deal Launched: {form.name.data}",
-            f"Live at ₹{round(form.original_price.data*(1-d),2)} ({round(d*100)}% off).",
-            ntype='deal')
+            f"📦 Added to Inventory: {form.name.data}",
+            f"{form.stock.data} units at ₹{form.original_price.data} (full price). "
+            "Use Launch Deal ⚡ to set an AI discount.",
+            ntype='system')
         db.session.commit()
-        flash(f"✅ Deal is live at {round(d*100)}% off!", "success")
+
+        flash(
+            "✅ Product added to inventory at full price. "
+            "Use Launch Deal ⚡ to apply an AI discount!",
+            "success"
+        )
         return redirect(url_for("retailer_dashboard"))
     return render_template("add_product.html", form=form)
 
@@ -662,10 +657,20 @@ def launch_deal():
         retailer_id=current_user.id, deal_active=False
     ).filter(Product.stock > 0).all()
 
+    # Also include active products that haven't had a deal launched yet
+    # (ai_suggested_discount is None = added via Add Product, no deal launched)
+    no_deal_yet = Product.query.filter_by(
+        retailer_id=current_user.id,
+        deal_active=True,
+        ai_suggested_discount=None,
+    ).filter(Product.stock > 0).all()
+
+    available = inactive + no_deal_yet
+
     form = LaunchDealForm()
     form.product_id.choices = [
         (p.id, f"{p.name}  —  {p.stock} units  @  ₹{p.original_price}")
-        for p in inactive
+        for p in available
     ]
 
     if form.validate_on_submit():
@@ -701,15 +706,20 @@ def launch_deal():
 
         deal_price = round(product.original_price * (1 - ai_discount), 2)
         push_notification(current_user.id,
-            f"🚀 Relaunched: {product.name}",
+            f"🚀 Deal Launched: {product.name}",
             f"Live at ₹{deal_price} ({round(ai_discount*100)}% off). "
             f"Velocity: {real_vel} units/day.",
             ntype='deal')
         db.session.commit()
+
+        # ── Trigger Wishlist Smart-Watch in background ──────────────────────
+        run_in_background(app, db, Product, User, WishlistItem,
+                          WishlistNotifLog, Notification)
+
         flash(f"🚀 {product.name} is live at ₹{deal_price} ({round(ai_discount*100)}% off)!", "success")
         return redirect(url_for("retailer_dashboard"))
 
-    return render_template("launch_deal.html", form=form, products=inactive)
+    return render_template("launch_deal.html", form=form, products=available)
 
 
 @app.route("/edit_product/<int:product_id>", methods=["GET", "POST"])
@@ -734,12 +744,14 @@ def edit_product(product_id):
         real_vel    = compute_real_velocity(product.id, form.category.data)
         store_tier  = infer_store_tier(current_user.city)
         demand_type = infer_demand_type(form.category.data)
-        ai_discount = predict_discount(store_tier, form.category.data, demand_type,
-                                       days_left, form.stock.data, real_vel)
-        product.store_tier            = store_tier
-        product.demand_type           = demand_type
-        product.velocity              = real_vel
-        product.ai_suggested_discount = ai_discount
+        # Only recalculate AI discount if a deal had already been launched
+        if product.ai_suggested_discount is not None:
+            ai_discount = predict_discount(store_tier, form.category.data, demand_type,
+                                           days_left, form.stock.data, real_vel)
+            product.ai_suggested_discount = ai_discount
+        product.store_tier  = store_tier
+        product.demand_type = demand_type
+        product.velocity    = real_vel
         db.session.commit()
         flash("✅ Product updated. AI discount recalculated.", "success")
         return redirect(url_for("retailer_dashboard"))
@@ -761,6 +773,11 @@ def toggle_deal(product_id):
         f"You manually {'activated' if product.deal_active else 'paused'} this deal.",
         ntype='deal')
     db.session.commit()
+
+    if product.deal_active:
+        run_in_background(app, db, Product, User, WishlistItem,
+                          WishlistNotifLog, Notification)
+
     flash(f"Deal {label}.", "info")
     return redirect(url_for("retailer_dashboard"))
 
@@ -802,25 +819,12 @@ def sales_history():
 
 
 # ═══════════════════════════════════════════════════════════════
-#  ROUTES — CUSTOMER  (Phase 1 & 2 additions)
+#  ROUTES — CUSTOMER
 # ═══════════════════════════════════════════════════════════════
 
 @app.route("/customer_dashboard")
 @login_required
 def customer_dashboard():
-    """
-    Phase 2 — Hyperlocal Discovery Engine.
-
-    For every active deal we:
-      1. Compute the Haversine distance from the customer to the retailer.
-         → Skipped (None) when either party's coordinates are unavailable.
-      2. Score each deal with calculate_relevance_score().
-      3. Sort descending by score so the best deals surface first.
-
-    We attach 'distance_km' and 'relevance_score' directly onto the Product
-    objects as transient Python attributes — SQLAlchemy doesn't persist them,
-    but the Jinja template can read them like normal properties.
-    """
     if current_user.role != "customer":
         return redirect(url_for("home"))
 
@@ -829,6 +833,7 @@ def customer_dashboard():
         Product.deal_active == True,
         Product.expiry_date > now,
         Product.stock > 0,
+        Product.ai_suggested_discount != None,  # only show products with an active deal/discount
     ).all()
 
     user_lat = current_user.lat
@@ -839,21 +844,18 @@ def customer_dashboard():
         retailer_lat = p.retailer.lat
         retailer_lon = p.retailer.lon
 
-        # ── Distance (km) ───────────────────────────────────────────────────
         if has_location and retailer_lat is not None and retailer_lon is not None:
             dist = haversine_distance(user_lat, user_lon, retailer_lat, retailer_lon)
             p.distance_km = round(dist, 1)
         else:
-            p.distance_km = None  # no coords → distance unknown
+            p.distance_km = None
 
-        # ── Relevance score ─────────────────────────────────────────────────
         p.relevance_score = calculate_relevance_score(
             discount_percent = p.discount_percent,
             distance_km      = p.distance_km,
             days_left        = p.days_left,
         )
 
-    # Sort: highest relevance first
     products.sort(key=lambda p: p.relevance_score, reverse=True)
 
     return render_template(
@@ -866,16 +868,6 @@ def customer_dashboard():
 @app.route("/update_location", methods=["GET", "POST"])
 @login_required
 def update_location():
-    """
-    Phase 1 — Customer location update.
-
-    CRITICAL ACCESS POLICY:
-      • Retailers: BLOCKED. Their coordinates are pinned once at registration
-        so that deal relevance scores remain fair and their store-tier inference
-        stays stable. Attempting to access this route redirects them away.
-      • Customers: allowed; re-geocodes their supplied address and updates
-        (address, lat, lon, city) in the User row.
-    """
     if current_user.role == "retailer":
         flash(
             "🔒 Retailer store locations are fixed at registration and cannot be changed. "
@@ -899,14 +891,13 @@ def update_location():
                 "Try adding a city name or pin code for better results.",
                 "warning"
             )
-            # Re-render form with the submitted value preserved
             return render_template("update_location.html", form=form)
 
         current_user.address = new_address
         current_user.lat     = lat
         current_user.lon     = lon
         if geocoded_city:
-            current_user.city = geocoded_city   # refresh city for store-tier display
+            current_user.city = geocoded_city
 
         db.session.commit()
         flash(
@@ -916,11 +907,140 @@ def update_location():
         )
         return redirect(url_for("customer_dashboard"))
 
-    # GET: pre-fill with whatever address is already on record
     if request.method == "GET" and current_user.address:
         form.address.data = current_user.address
 
     return render_template("update_location.html", form=form)
+
+
+# ═══════════════════════════════════════════════════════════════
+#  ROUTES — CUSTOMER WISHLIST (DB-backed Smart-Watch)
+# ═══════════════════════════════════════════════════════════════
+
+@app.route("/wishlist", methods=["GET", "POST"])
+@login_required
+def wishlist():
+    if current_user.role != "customer":
+        flash("Wishlist is only available for customer accounts.", "warning")
+        return redirect(url_for("home"))
+
+    form = WishlistItemForm()
+    now  = datetime.now(timezone.utc)
+
+    if form.validate_on_submit():
+        item_name = form.item_name.data.strip()
+        threshold = form.max_price_threshold.data  # may be None
+
+        # Check for exact duplicate
+        existing = WishlistItem.query.filter_by(
+            user_id=current_user.id,
+            item_name=item_name,
+        ).first()
+
+        if existing:
+            flash(f"'{item_name}' is already in your Smart Watchlist.", "warning")
+        else:
+            db.session.add(WishlistItem(
+                user_id=current_user.id,
+                item_name=item_name,
+                max_price_threshold=threshold,
+            ))
+            db.session.commit()
+            flash(f"✅ '{item_name}' added to Smart Watchlist!", "success")
+
+        return redirect(url_for("wishlist"))
+
+    # Fetch DB wishlist items
+    db_items = (WishlistItem.query
+                .filter_by(user_id=current_user.id)
+                .order_by(WishlistItem.created_at.desc())
+                .all())
+
+    # Active live deals with a launched discount (for the localStorage-powered deal cards)
+    live_products = Product.query.filter(
+        Product.deal_active == True,
+        Product.expiry_date > now,
+        Product.stock > 0,
+        Product.ai_suggested_discount != None,
+    ).all()
+
+    return render_template(
+        "wishlist.html",
+        products=live_products,
+        db_items=db_items,
+        form=form,
+    )
+
+
+@app.route("/wishlist/delete/<int:item_id>", methods=["POST"])
+@login_required
+def delete_wishlist_item(item_id):
+    if current_user.role != "customer":
+        return redirect(url_for("home"))
+    item = db.session.get(WishlistItem, item_id)
+    if item and item.user_id == current_user.id:
+        db.session.delete(item)
+        db.session.commit()
+        flash(f"Removed '{item.item_name}' from Smart Watchlist.", "info")
+    return redirect(url_for("wishlist"))
+
+
+@app.route("/customer_notifications")
+@login_required
+def customer_notifications():
+    if current_user.role != "customer":
+        flash("This page is for customer accounts only.", "warning")
+        return redirect(url_for("home"))
+    return render_template("cust_notifications.html")
+
+
+# ═══════════════════════════════════════════════════════════════
+#  API — Live deals lookup
+# ═══════════════════════════════════════════════════════════════
+
+@app.route("/api/deals/live")
+@login_required
+def api_deals_live():
+    ids_param = request.args.get("ids", "")
+    now = datetime.now(timezone.utc)
+
+    if ids_param:
+        try:
+            id_list = [int(x) for x in ids_param.split(",") if x.strip()]
+        except ValueError:
+            return jsonify({"error": "Invalid ids parameter"}), 400
+        products = Product.query.filter(
+            Product.id.in_(id_list),
+            Product.deal_active == True,
+            Product.expiry_date > now,
+            Product.stock > 0,
+            Product.ai_suggested_discount != None,
+        ).all()
+    else:
+        products = Product.query.filter(
+            Product.deal_active == True,
+            Product.expiry_date > now,
+            Product.stock > 0,
+            Product.ai_suggested_discount != None,
+        ).all()
+
+    result = {}
+    for p in products:
+        result[p.id] = {
+            "id":               p.id,
+            "name":             p.name,
+            "category":         p.category or "Other",
+            "current_price":    p.current_price,
+            "original_price":   p.original_price,
+            "discount_percent": p.discount_percent,
+            "urgency":          p.urgency_level,
+            "stock":            p.stock,
+            "expiry":           p.expiry_date.isoformat(),
+            "store":            p.retailer.name if p.retailer else "Unknown",
+            "grab_url":         url_for("grab_deal", product_id=p.id),
+        }
+
+    return jsonify(result)
 
 
 @app.route("/grab_deal/<int:product_id>", methods=["POST"])
@@ -933,7 +1053,7 @@ def grab_deal(product_id):
         flash("Sorry, this deal is no longer available!", "danger")
         return redirect(url_for("customer_dashboard"))
 
-    selling_price = product.current_price   # freeze at grab time
+    selling_price = product.current_price
     product.stock -= 1
     if product.stock == 0:
         product.deal_active = False
@@ -1035,7 +1155,7 @@ def suggest_closing_time_api():
 
 
 # ═══════════════════════════════════════════════════════════════
-#  API — Notifications (bell dropdown uses these)
+#  API — Notifications
 # ═══════════════════════════════════════════════════════════════
 
 @app.route("/api/notifications")
@@ -1095,6 +1215,25 @@ def get_live_price(product_id):
         "urgency":          product.urgency_level,
         "stock":            product.stock,
     })
+
+
+# ═══════════════════════════════════════════════════════════════
+#  API — Wishlist (DB items)
+# ═══════════════════════════════════════════════════════════════
+
+@app.route("/api/wishlist")
+@login_required
+def api_wishlist():
+    """Returns the current user's DB wishlist items as JSON."""
+    if current_user.role != "customer":
+        return jsonify({"error": "Customers only"}), 403
+    items = WishlistItem.query.filter_by(user_id=current_user.id).all()
+    return jsonify([{
+        "id":         w.id,
+        "item_name":  w.item_name,
+        "max_price":  w.max_price_threshold,
+        "created_at": w.created_at.strftime("%d %b %Y") if w.created_at else "—",
+    } for w in items])
 
 
 # ═══════════════════════════════════════════════════════════════

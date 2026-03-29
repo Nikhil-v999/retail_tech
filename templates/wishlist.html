@@ -1,0 +1,788 @@
+{% include "header.html" %}
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:#07090f; --panel:#0c1018; --surface:#111827; --surface2:#161f30;
+  --border:rgba(255,255,255,0.055); --border2:rgba(255,255,255,0.09);
+  --amber:#f5a623; --amber-glow:rgba(245,166,35,0.15);
+  --green:#22d47a; --green-glow:rgba(34,212,122,0.12);
+  --red:#ff4d6a;   --red-glow:rgba(255,77,106,0.12);
+  --blue:#4d9fff;  --blue-glow:rgba(77,159,255,0.12);
+  --violet:#a78bfa; --violet-glow:rgba(167,139,250,0.12);
+  --pink:#f472b6; --pink-glow:rgba(244,114,182,0.12);
+  --cyan:#00d4ff;  --cyan-glow:rgba(0,212,255,0.12);
+  --text:#dde3ed; --muted:#3d4f63; --sub:#6b7f96;
+  --sb-full:240px; --sb-mini:62px;
+  --radius-md:12px; --radius-lg:18px;
+  --trans:0.28s cubic-bezier(0.4,0,0.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);min-height:100vh;}
+
+.rd-shell{display:flex;min-height:calc(100vh - 80px);}
+
+/* COLLAPSIBLE SIDEBAR */
+.rd-sidebar{width:var(--sb-mini);flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);padding:20px 10px 32px;display:flex;flex-direction:column;gap:4px;position:sticky;top:80px;height:calc(100vh - 80px);overflow:hidden;overflow-y:auto;transition:width var(--trans);z-index:100;}
+.rd-sidebar:hover{width:var(--sb-full);box-shadow:4px 0 28px rgba(0,0,0,0.4);}
+.rd-sidebar::-webkit-scrollbar{width:3px;}
+.rd-sidebar::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+.sb-brand{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;color:var(--green);padding:0 4px 18px;border-bottom:1px solid var(--border);margin-bottom:10px;white-space:nowrap;overflow:hidden;}
+.sb-brand-icon{font-size:20px;flex-shrink:0;}
+.sb-brand-text{opacity:0;transition:opacity var(--trans);}
+.rd-sidebar:hover .sb-brand-text{opacity:1;}
+.sb-section{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:14px 4px 5px;white-space:nowrap;overflow:hidden;opacity:0;transition:opacity var(--trans);}
+.rd-sidebar:hover .sb-section{opacity:1;}
+.sb-link{display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--radius-md);color:var(--sub);text-decoration:none;font-size:14.5px;font-weight:600;transition:all 0.16s;border:1px solid transparent;white-space:nowrap;overflow:hidden;}
+.sb-link:hover{background:var(--surface);color:var(--text);border-color:var(--border);}
+.sb-link.active{background:var(--red-glow);color:var(--red);border-color:rgba(255,77,106,0.22);}
+.sb-icon{font-size:18px;width:24px;text-align:center;flex-shrink:0;}
+.sb-label-text{opacity:0;transition:opacity var(--trans);}
+.rd-sidebar:hover .sb-label-text{opacity:1;}
+.sb-divider{height:1px;background:var(--border);margin:8px 0;flex-shrink:0;}
+
+/* MAIN */
+.wl-main{flex:1;padding:32px 36px 80px;min-width:0;}
+
+/* ══════════════════════════════════════
+   SMART-WATCH SECTION (DB-persisted)
+══════════════════════════════════════ */
+.sw-section {
+  margin-bottom: 40px;
+}
+
+.sw-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 20px; gap: 12px; flex-wrap: wrap;
+}
+
+.sw-title-block {}
+.sw-title {
+  font-size: 24px; font-weight: 800; letter-spacing: -0.4px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sw-badge {
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+  background: rgba(0,212,255,0.12); border: 1px solid rgba(0,212,255,0.3);
+  color: var(--cyan); border-radius: 20px; padding: 2px 12px;
+}
+.sw-sub {
+  font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+  color: var(--muted); margin-top: 5px; line-height: 1.6;
+}
+
+/* AI callout */
+.sw-ai-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.22);
+  border-radius: 30px; padding: 7px 16px; font-size: 12px; font-weight: 700;
+  color: var(--violet); font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+.sw-ai-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--violet); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(1.3);} }
+
+/* Add form card */
+.sw-add-card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 22px 24px; margin-bottom: 20px;
+  position: relative; overflow: hidden;
+}
+.sw-add-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--cyan), var(--violet));
+}
+.sw-add-label {
+  font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 14px; display: block;
+}
+.sw-form-row {
+  display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: end;
+}
+@media(max-width:700px) { .sw-form-row { grid-template-columns: 1fr; } }
+
+.sw-field-group { display: flex; flex-direction: column; gap: 5px; }
+.sw-field-label {
+  font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--muted);
+}
+.sw-input {
+  background: var(--bg) !important; border: 1px solid rgba(255,255,255,0.08) !important;
+  color: var(--text) !important; border-radius: 10px !important;
+  padding: 11px 14px !important; font-size: 14px !important;
+  font-family: 'Syne', sans-serif !important; outline: none !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+  width: 100%;
+}
+.sw-input:focus { border-color: rgba(0,212,255,0.45) !important; box-shadow: 0 0 0 3px rgba(0,212,255,0.08) !important; }
+.sw-input::placeholder { color: var(--muted) !important; }
+
+.sw-price-input { max-width: 160px; }
+
+.btn-sw-add {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, var(--cyan), #0099cc);
+  color: #07090f; border: none; padding: 11px 22px; border-radius: 10px;
+  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 800;
+  cursor: pointer; transition: all 0.22s; white-space: nowrap;
+}
+.btn-sw-add:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,212,255,0.35); }
+
+/* Flash messages */
+.dd-flash .alert { border-radius: 10px; padding: 12px 16px; font-size: 13px; font-weight: 600; border: none; margin-bottom: 10px; }
+.dd-flash .alert-success { background: rgba(34,212,122,0.1); border-left: 3px solid var(--green); color: #5effa0; }
+.dd-flash .alert-danger  { background: rgba(255,77,106,0.1);  border-left: 3px solid var(--red);   color: #ff8fa0; }
+.dd-flash .alert-warning { background: rgba(245,166,35,0.1);  border-left: 3px solid var(--amber); color: #ffd070; }
+.dd-flash .alert-info    { background: rgba(77,159,255,0.1);  border-left: 3px solid var(--blue);  color: #8ac8ff; }
+
+/* Watch items list */
+.sw-list { display: flex; flex-direction: column; gap: 8px; }
+
+.sw-item {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 12px; padding: 13px 16px;
+  transition: border-color 0.16s;
+}
+.sw-item:hover { border-color: rgba(0,212,255,0.2); }
+
+.sw-item-icon {
+  width: 36px; height: 36px; border-radius: 9px;
+  background: var(--cyan-glow); border: 1px solid rgba(0,212,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.sw-item-info { flex: 1; min-width: 0; }
+.sw-item-name {
+  font-size: 14px; font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sw-item-meta {
+  font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+  color: var(--muted); margin-top: 3px;
+}
+.sw-item-price {
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  color: var(--cyan); font-weight: 700;
+  background: rgba(0,212,255,0.07); border: 1px solid rgba(0,212,255,0.15);
+  padding: 3px 10px; border-radius: 20px; white-space: nowrap;
+}
+
+.btn-sw-del {
+  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+  background: var(--surface); border: 1px solid var(--border2);
+  color: var(--muted); cursor: pointer; font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.18s;
+}
+.btn-sw-del:hover { background: var(--red-glow); border-color: rgba(255,77,106,0.4); color: var(--red); }
+
+.sw-empty {
+  text-align: center; padding: 32px 20px;
+  color: var(--muted); font-size: 14px;
+  background: var(--panel); border: 1px dashed rgba(255,255,255,0.05);
+  border-radius: var(--radius-lg);
+}
+.sw-empty-icon { font-size: 36px; display: block; margin-bottom: 10px; }
+
+/* ══════════════════════════════════════
+   SECTION DIVIDER
+══════════════════════════════════════ */
+.section-divider {
+  display: flex; align-items: center; gap: 14px; margin: 36px 0 28px;
+}
+.sd-line { flex: 1; height: 1px; background: var(--border); }
+.sd-label {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
+  white-space: nowrap;
+}
+
+/* ══════════════════════════════════════
+   SAVED DEALS SECTION (localStorage)
+══════════════════════════════════════ */
+.wl-topbar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;gap:16px;flex-wrap:wrap;}
+.wl-title-block{}
+.wl-title{font-size:22px;font-weight:800;letter-spacing:-0.4px;display:flex;align-items:center;gap:10px;}
+.wl-count-pill{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;background:var(--red-glow);border:1px solid rgba(255,77,106,0.3);color:var(--red);border-radius:20px;padding:2px 12px;}
+.wl-sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-top:5px;}
+.wl-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+
+.btn-grab-all{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--green),#1ecc73);color:#07090f;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;padding:9px 18px;border-radius:var(--radius-md);border:none;cursor:pointer;transition:all 0.2s;white-space:nowrap;text-decoration:none;}
+.btn-grab-all:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(34,212,122,0.35);}
+.btn-grab-all:disabled{opacity:0.4;cursor:default;transform:none;box-shadow:none;}
+.btn-clear-all{display:inline-flex;align-items:center;gap:7px;background:var(--surface);color:var(--sub);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;padding:9px 15px;border-radius:var(--radius-md);border:1px solid var(--border2);cursor:pointer;transition:all 0.18s;white-space:nowrap;}
+.btn-clear-all:hover{background:var(--red-glow);color:var(--red);border-color:rgba(255,77,106,0.3);}
+.btn-back{display:inline-flex;align-items:center;gap:7px;background:var(--surface);color:var(--sub);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;padding:9px 15px;border-radius:var(--radius-md);border:1px solid var(--border2);cursor:pointer;transition:all 0.18s;white-space:nowrap;text-decoration:none;}
+.btn-back:hover{background:var(--surface2);color:var(--text);}
+
+.wl-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+@media(max-width:900px){.wl-stats{grid-template-columns:repeat(2,1fr);}}
+.stat-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px 18px;position:relative;overflow:hidden;}
+.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;}
+.stat-card.s-red::after{background:var(--red);}
+.stat-card.s-green::after{background:var(--green);}
+.stat-card.s-violet::after{background:var(--violet);}
+.stat-card.s-amber::after{background:var(--amber);}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:600;line-height:1;margin-bottom:5px;}
+.stat-card.s-red .stat-val{color:var(--red);}
+.stat-card.s-green .stat-val{color:var(--green);}
+.stat-card.s-violet .stat-val{color:var(--violet);}
+.stat-card.s-amber .stat-val{color:var(--amber);}
+.stat-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+
+.wl-controls{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.search-box{flex:1;min-width:160px;max-width:220px;background:var(--panel);border:1px solid var(--border2);color:var(--text);border-radius:10px;padding:8px 14px;font-family:'Syne',sans-serif;font-size:14px;outline:none;transition:border-color 0.18s;}
+.search-box::placeholder{color:var(--muted);}
+.search-box:focus{border-color:rgba(255,77,106,0.45);}
+.wl-filter-chips{display:flex;gap:7px;flex-wrap:wrap;}
+.chip{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--panel);border:1px solid var(--border2);color:var(--sub);padding:5px 13px;border-radius:20px;cursor:pointer;transition:all 0.16s;white-space:nowrap;user-select:none;}
+.chip.active{background:var(--red-glow);border-color:rgba(255,77,106,0.35);color:var(--red);}
+.chip:hover{border-color:rgba(255,77,106,0.3);color:var(--red);}
+.chip.c-live.active{background:var(--green-glow);border-color:rgba(34,212,122,0.35);color:var(--green);}
+.chip.c-live:hover{border-color:rgba(34,212,122,0.3);color:var(--green);}
+.chip.c-pdrop.active{background:var(--violet-glow);border-color:rgba(167,139,250,0.35);color:var(--violet);}
+.chip.c-pdrop:hover{border-color:rgba(167,139,250,0.3);color:var(--violet);}
+.sort-sel{background:var(--panel);border:1px solid var(--border2);color:var(--sub);border-radius:10px;padding:6px 12px;font-family:'JetBrains Mono',monospace;font-size:11px;outline:none;cursor:pointer;margin-left:auto;}
+.sort-sel:focus{border-color:rgba(255,77,106,0.4);}
+
+.wl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px;}
+
+.wl-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;position:relative;transition:transform var(--trans),box-shadow var(--trans),border-color var(--trans);display:flex;flex-direction:column;}
+.wl-card:hover{transform:translateY(-3px);box-shadow:0 16px 44px rgba(0,0,0,0.4);}
+.wl-card.has-drop{border-color:rgba(167,139,250,0.35);}
+.wl-card.has-drop:hover{border-color:rgba(167,139,250,0.6);box-shadow:0 0 28px rgba(167,139,250,0.15),0 16px 44px rgba(0,0,0,0.4);}
+
+.wl-card-top{position:relative;height:100px;background:linear-gradient(135deg,var(--surface),var(--surface2));display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.wl-emoji{font-size:42px;}
+.wl-disc-badge{position:absolute;top:10px;right:10px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;background:var(--green);color:#07090f;padding:3px 10px;border-radius:20px;}
+.wl-disc-badge.crit{background:var(--red);color:#fff;}
+.wl-disc-badge.high{background:#fb923c;color:#fff;}
+.wl-urgency-strip{height:3px;position:absolute;bottom:0;left:0;right:0;}
+.wl-urgency-strip.low{background:var(--green);}
+.wl-urgency-strip.medium{background:var(--amber);}
+.wl-urgency-strip.high{background:#fb923c;}
+.wl-urgency-strip.critical{background:var(--red);animation:crit 0.9s infinite;}
+@keyframes crit{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+.pdrop-banner{display:flex;align-items:center;gap:8px;background:rgba(167,139,250,0.08);border-bottom:1px solid rgba(167,139,250,0.2);padding:8px 14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--violet);}
+.pdrop-icon{font-size:14px;}
+.pdrop-amount{font-weight:700;}
+
+.wl-card-body{padding:14px;flex:1;display:flex;flex-direction:column;gap:9px;}
+.wl-cat{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.wl-name{font-size:15px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.wl-store{font-size:12px;color:var(--sub);}
+
+.wl-price-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+.wl-price-now{font-family:'JetBrains Mono',monospace;font-size:21px;font-weight:600;color:var(--green);}
+.wl-price-was{font-size:12px;color:var(--muted);text-decoration:line-through;}
+.wl-saved-chip{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;background:var(--green-glow);border:1px solid rgba(34,212,122,0.2);color:var(--green);padding:2px 8px;border-radius:20px;margin-left:auto;}
+
+.wl-timer{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:8px;display:flex;justify-content:center;align-items:center;gap:10px;}
+.wl-timer.medium{border-color:rgba(245,166,35,0.2);background:rgba(245,166,35,0.04);}
+.wl-timer.high{border-color:rgba(251,146,60,0.2);background:rgba(251,146,60,0.04);}
+.wl-timer.critical{border-color:rgba(255,77,106,0.25);background:rgba(255,77,106,0.04);}
+.t-unit{text-align:center;}
+.t-val{font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:600;color:var(--text);display:block;line-height:1;}
+.wl-timer.high .t-val{color:#fb923c;}
+.wl-timer.critical .t-val{color:var(--red);}
+.t-lbl{font-size:8px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);display:block;margin-top:2px;}
+.t-sep{font-size:15px;color:var(--muted);align-self:center;padding-bottom:4px;}
+
+.wl-card-actions{display:flex;gap:8px;margin-top:auto;}
+.btn-grab{flex:1;background:var(--green);border:none;color:#07090f;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;padding:10px;border-radius:10px;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.btn-grab:hover{background:#2eec8a;transform:translateY(-1px);box-shadow:0 6px 18px rgba(34,212,122,0.3);}
+.btn-rm{width:36px;height:36px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all 0.18s;flex-shrink:0;}
+.btn-rm:hover{border-color:rgba(255,77,106,0.4);background:var(--red-glow);}
+
+.wl-saved-time{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);text-align:right;}
+
+.tombstone-section{margin-top:28px;}
+.tombstone-hdr{display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:pointer;user-select:none;}
+.tombstone-hdr-title{font-size:13px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:8px;}
+.tombstone-hdr-badge{font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:2px 9px;border-radius:20px;}
+.tombstone-toggle{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);margin-left:auto;transition:color 0.15s;}
+.tombstone-hdr:hover .tombstone-toggle{color:var(--sub);}
+.tombstone-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+.tombstone-card{background:var(--panel);border:1px dashed rgba(255,255,255,0.07);border-radius:var(--radius-md);padding:14px;opacity:0.6;transition:opacity 0.18s;position:relative;overflow:hidden;}
+.tombstone-card::before{content:'EXPIRED';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-25deg);font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:rgba(255,77,106,0.08);letter-spacing:4px;white-space:nowrap;pointer-events:none;}
+.tombstone-card:hover{opacity:0.85;}
+.ts-emoji{font-size:26px;margin-bottom:8px;filter:grayscale(1);display:block;}
+.ts-name{font-size:13px;font-weight:700;color:var(--sub);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ts-price{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
+.ts-rm{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;transition:color 0.15s;}
+.ts-rm:hover{color:var(--red);}
+
+.wl-empty{grid-column:1/-1;padding:60px 20px;text-align:center;}
+.wl-empty-icon{font-size:50px;display:block;margin-bottom:16px;}
+.wl-empty h3{font-size:18px;color:var(--sub);margin-bottom:8px;}
+.wl-empty p{font-size:14px;color:var(--muted);}
+.wl-empty a{color:var(--green);font-weight:700;text-decoration:none;}
+.wl-empty a:hover{text-decoration:underline;}
+
+.no-results{grid-column:1/-1;padding:40px 20px;text-align:center;color:var(--muted);font-size:14px;display:none;}
+
+/* Toast */
+.dd-toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:10px 20px;border-radius:40px;font-size:13px;font-weight:700;z-index:9999;opacity:0;transition:all 0.28s;white-space:nowrap;font-family:'Syne',sans-serif;box-shadow:0 8px 32px rgba(0,0,0,0.45);pointer-events:none;}
+.dd-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+@media(max-width:900px){.rd-sidebar{display:none;}.wl-main{padding:20px 16px 60px;}.wl-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:540px){.wl-grid{grid-template-columns:1fr;}}
+</style>
+
+<div class="dd-toast" id="ddToast"></div>
+
+<div class="rd-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="rd-sidebar">
+    <div class="sb-brand">
+      <span class="sb-brand-icon">⚡</span>
+      <span class="sb-brand-text">DealDrop</span>
+    </div>
+    <div class="sb-section">Discover</div>
+    <a href="{{ url_for('customer_dashboard') }}" class="sb-link">
+      <span class="sb-icon">🛒</span><span class="sb-label-text"> Deals Feed</span>
+    </a>
+    <a href="{{ url_for('update_location') }}" class="sb-link">
+      <span class="sb-icon">📍</span><span class="sb-label-text"> My Location</span>
+    </a>
+    <div class="sb-divider"></div>
+    <div class="sb-section">Account</div>
+    <a href="{{ url_for('wishlist') }}" class="sb-link active">
+      <span class="sb-icon">❤️</span><span class="sb-label-text"> Wishlist</span>
+    </a>
+    <a href="{{ url_for('customer_notifications') }}" class="sb-link">
+      <span class="sb-icon">🔔</span><span class="sb-label-text"> Notifications</span>
+    </a>
+    <a href="{{ url_for('logout') }}" class="sb-link">
+      <span class="sb-icon">🚪</span><span class="sb-label-text"> Logout</span>
+    </a>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="wl-main">
+
+    <!-- ════════════════════════════════════════
+         SMART-WATCH SECTION
+    ═════════════════════════════════════════ -->
+    <div class="sw-section">
+
+      <div class="sw-header">
+        <div class="sw-title-block">
+          <div class="sw-title">
+            🎯 Smart Watch
+            <span class="sw-badge">{{ db_items | length }} tracked</span>
+          </div>
+          <div class="sw-sub">
+            AI monitors new deals 24/7 and notifies you when a match arrives.
+          </div>
+        </div>
+        <div class="sw-ai-pill">
+          <span class="sw-ai-dot"></span>
+          Semantic AI · cosine similarity · MiniLM-L6-v2
+        </div>
+      </div>
+
+      <!-- Flash messages -->
+      <div class="dd-flash">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}{% for cat, msg in messages %}
+            <div class="alert alert-{{ cat }}">{{ msg }}</div>
+          {% endfor %}{% endif %}
+        {% endwith %}
+      </div>
+
+      <!-- Add form -->
+      <div class="sw-add-card">
+        <span class="sw-add-label">➕ Add item to Smart Watch</span>
+        <form method="POST" action="{{ url_for('wishlist') }}">
+          {{ form.hidden_tag() }}
+          <div class="sw-form-row">
+            <div class="sw-field-group">
+              <label class="sw-field-label">What are you looking for?</label>
+              {{ form.item_name(
+                  class="sw-input",
+                  placeholder="e.g. Amul Butter, Headphones, Milk…"
+              ) }}
+            </div>
+            <div class="sw-field-group">
+              <label class="sw-field-label">Max price (₹) — optional</label>
+              {{ form.max_price_threshold(
+                  class="sw-input sw-price-input",
+                  placeholder="e.g. 250"
+              ) }}
+            </div>
+            <button type="submit" class="btn-sw-add">🎯 Watch</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Watch items list -->
+      {% if db_items %}
+        <div class="sw-list">
+          {% for item in db_items %}
+          <div class="sw-item">
+            <div class="sw-item-icon">🔍</div>
+            <div class="sw-item-info">
+              <div class="sw-item-name">{{ item.item_name }}</div>
+              <div class="sw-item-meta">
+                Added {{ item.created_at.strftime('%d %b %Y') if item.created_at else '—' }}
+              </div>
+            </div>
+            {% if item.max_price_threshold %}
+              <span class="sw-item-price">≤ ₹{{ "%.0f" | format(item.max_price_threshold) }}</span>
+            {% else %}
+              <span class="sw-item-price" style="color:var(--muted);border-color:var(--border);background:transparent;">Any price</span>
+            {% endif %}
+            <form method="POST" action="{{ url_for('delete_wishlist_item', item_id=item.id) }}" style="display:contents;">
+              {{ form.hidden_tag() }}
+              <button type="submit" class="btn-sw-del" title="Remove">✕</button>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="sw-empty">
+          <span class="sw-empty-icon">🔭</span>
+          <div>No items watched yet. Add one above and the AI will alert you the moment a matching deal drops.</div>
+        </div>
+      {% endif %}
+
+    </div>
+
+    <!-- ════════════════════════════════════════
+         SECTION DIVIDER
+    ═════════════════════════════════════════ -->
+    <div class="section-divider">
+      <div class="sd-line"></div>
+      <span class="sd-label">❤️ Saved Deal Cards (browser)</span>
+      <div class="sd-line"></div>
+    </div>
+
+    <!-- ════════════════════════════════════════
+         SAVED DEALS (localStorage-backed)
+    ═════════════════════════════════════════ -->
+    <div class="wl-topbar">
+      <div class="wl-title-block">
+        <div class="wl-title">
+          ❤️ Saved Deals
+          <span class="wl-count-pill" id="wlCountPill">0</span>
+        </div>
+        <div class="wl-sub">Tap ❤️ on any deal card to save it here</div>
+      </div>
+      <div class="wl-actions">
+        <a href="{{ url_for('customer_dashboard') }}" class="btn-back">← Browse Deals</a>
+        <button class="btn-grab-all" id="btnGrabAll" onclick="grabAll()" disabled>⚡ Grab All Live</button>
+        <button class="btn-clear-all" onclick="confirmClearAll()">🗑 Clear All</button>
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="wl-stats">
+      <div class="stat-card s-red">
+        <div class="stat-val" id="statTotal">0</div>
+        <div class="stat-lbl">Saved Items</div>
+      </div>
+      <div class="stat-card s-green">
+        <div class="stat-val" id="statLive">0</div>
+        <div class="stat-lbl">Currently Live</div>
+      </div>
+      <div class="stat-card s-violet">
+        <div class="stat-val" id="statDrops">0</div>
+        <div class="stat-lbl">Price Drops</div>
+      </div>
+      <div class="stat-card s-amber">
+        <div class="stat-val" id="statPotSave">₹0</div>
+        <div class="stat-lbl">Potential Savings</div>
+      </div>
+    </div>
+
+    <!-- Filter + sort -->
+    <div class="wl-controls">
+      <input type="text" class="search-box" id="wlSearch" placeholder="🔍 Search saved…" oninput="renderWishlist()">
+      <div class="wl-filter-chips">
+        <span class="chip active" data-wf="all"   onclick="setWlFilter('all',this)">All</span>
+        <span class="chip c-live" data-wf="live"  onclick="setWlFilter('live',this)">🟢 Live</span>
+        <span class="chip c-pdrop" data-wf="drop" onclick="setWlFilter('drop',this)">📉 Price Drop</span>
+      </div>
+      <select class="sort-sel" id="wlSort" onchange="renderWishlist()">
+        <option value="saved_desc">Newest Saved</option>
+        <option value="saved_asc">Oldest Saved</option>
+        <option value="price_asc">Price ↑</option>
+        <option value="price_desc">Price ↓</option>
+        <option value="drop_desc">Drop % ↓</option>
+      </select>
+    </div>
+
+    <!-- Deal grid -->
+    <div class="wl-grid" id="wlGrid">
+      <div class="wl-empty">
+        <span class="wl-empty-icon">💭</span>
+        <h3>No saved deals yet</h3>
+        <p>Tap ❤️ on any deal to save it here.<br><a href="{{ url_for('customer_dashboard') }}">Browse live deals →</a></p>
+      </div>
+    </div>
+
+    <!-- Expired tombstones -->
+    <div class="tombstone-section" id="tombstoneSection" style="display:none;">
+      <div class="tombstone-hdr" onclick="toggleTombstones()">
+        <div class="tombstone-hdr-title">
+          ⚰️ Expired Deals
+          <span class="tombstone-hdr-badge" id="tombstoneBadge">0</span>
+        </div>
+        <span class="tombstone-toggle" id="tombstoneToggleLabel">▼ Show</span>
+      </div>
+      <div class="tombstone-grid" id="tombstoneGrid" style="display:none;"></div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* ─── Live deals data from server (Jinja) ─── */
+const LIVE_DEALS = {};
+{% if products %}
+{% for p in products %}
+LIVE_DEALS[{{ p.id }}] = {
+  id: {{ p.id }},
+  name: {{ p.name | tojson }},
+  category: {{ p.category | tojson }},
+  current_price: {{ p.current_price }},
+  original_price: {{ p.original_price }},
+  discount_percent: {{ p.discount_percent }},
+  urgency: {{ p.urgency_level | tojson }},
+  expiry: {{ p.expiry_date.isoformat() | tojson }},
+  store: {{ p.retailer.name | tojson }},
+  grab_url: "{{ url_for('grab_deal', product_id=p.id) }}"
+};
+{% endfor %}
+{% endif %}
+
+/* ─── Emoji helper ─── */
+function cemoji(cat) {
+  const map = {Dairy:'🥛',Bakery:'🍞',Snacks:'🍿',Beverages:'🧃',Household:'🏠',Electronics:'📱',Clothing:'👕',Cosmetics:'💄',Canned:'🥫'};
+  return map[cat] || '📦';
+}
+
+/* ─── State ─── */
+let wishlist    = JSON.parse(localStorage.getItem('dd_wishlist')||'[]');
+let wlFilter    = 'all';
+let tombVisible = false;
+
+function setWlFilter(f, el) {
+  wlFilter = f;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderWishlist();
+}
+
+function toggleTombstones() {
+  tombVisible = !tombVisible;
+  document.getElementById('tombstoneGrid').style.display = tombVisible ? 'grid' : 'none';
+  document.getElementById('tombstoneToggleLabel').textContent = tombVisible ? '▲ Hide' : '▼ Show';
+}
+
+/* ─── Helpers ─── */
+const pad = n => String(n).padStart(2,'0');
+function fmtTimeAgo(ts) {
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff/60000), h = Math.floor(diff/3600000), d = Math.floor(diff/86400000);
+  if (d>0) return d+'d ago';
+  if (h>0) return h+'h ago';
+  if (m>0) return m+'m ago';
+  return 'just now';
+}
+function urgClass(u) {
+  if(u==='critical') return 'critical';
+  if(u==='high')     return 'high';
+  if(u==='medium')   return 'medium';
+  return 'low';
+}
+
+/* ─── Main render ─── */
+function renderWishlist() {
+  const q    = (document.getElementById('wlSearch').value||'').toLowerCase().trim();
+  const sort = document.getElementById('wlSort').value;
+
+  const liveItems    = [];
+  const expiredItems = [];
+
+  for (const item of wishlist) {
+    const live = LIVE_DEALS[item.id];
+    if (live) {
+      const expDiff = new Date(live.expiry + 'Z') - new Date();
+      if (expDiff <= 0) { expiredItems.push({...item, live}); }
+      else {
+        const priceDropPct = item.originalPrice > 0
+          ? Math.round(((item.price - live.current_price) / item.price) * 100)
+          : 0;
+        liveItems.push({...item, live, priceDropPct, expDiff});
+      }
+    } else {
+      expiredItems.push(item);
+    }
+  }
+
+  /* Stats */
+  const drops   = liveItems.filter(x => x.priceDropPct > 0).length;
+  const potSave = liveItems.reduce((acc, x) => acc + Math.max(0,(x.price - (x.live ? x.live.current_price : x.price))), 0);
+  document.getElementById('statTotal').textContent   = wishlist.length;
+  document.getElementById('statLive').textContent    = liveItems.length;
+  document.getElementById('statDrops').textContent   = drops;
+  document.getElementById('statPotSave').textContent = '₹' + Math.round(potSave);
+  document.getElementById('wlCountPill').textContent = wishlist.length;
+
+  const grabBtn = document.getElementById('btnGrabAll');
+  if(grabBtn) grabBtn.disabled = liveItems.length === 0;
+
+  let items = liveItems;
+  if (wlFilter === 'drop')  items = items.filter(x => x.priceDropPct > 0);
+  if (q) items = items.filter(x => x.name.toLowerCase().includes(q) || (x.live && x.live.category.toLowerCase().includes(q)));
+
+  items = [...items];
+  switch(sort) {
+    case 'saved_asc':  items.sort((a,b)=>a.savedAt-b.savedAt); break;
+    case 'price_asc':  items.sort((a,b)=>(a.live?a.live.current_price:a.price)-(b.live?b.live.current_price:b.price)); break;
+    case 'price_desc': items.sort((a,b)=>(b.live?b.live.current_price:b.price)-(a.live?a.live.current_price:a.price)); break;
+    case 'drop_desc':  items.sort((a,b)=>b.priceDropPct-a.priceDropPct); break;
+    default:           items.sort((a,b)=>b.savedAt-a.savedAt);
+  }
+
+  const grid = document.getElementById('wlGrid');
+
+  if (!wishlist.length) {
+    grid.innerHTML = `<div class="wl-empty">
+      <span class="wl-empty-icon">💭</span>
+      <h3>No saved deals yet</h3>
+      <p>Tap ❤️ on any deal to save it here.<br><a href="{{ url_for('customer_dashboard') }}">Browse live deals →</a></p>
+    </div>`;
+    document.getElementById('tombstoneSection').style.display = 'none';
+    return;
+  }
+
+  if (!items.length && wishlist.length > 0) {
+    grid.innerHTML = `<div class="no-results" style="display:block;grid-column:1/-1;padding:40px 20px;text-align:center;color:var(--muted);font-size:14px;">No items match this filter.</div>`;
+  } else {
+    grid.innerHTML = items.map(item => {
+      const d = item.live;
+      const uc = urgClass(d.urgency);
+      const hasDrop = item.priceDropPct > 0;
+      const discBadgeClass = d.urgency === 'critical' ? 'crit' : d.urgency === 'high' ? 'high' : '';
+      return `
+        <div class="wl-card ${hasDrop ? 'has-drop' : ''}" id="wlcard-${item.id}">
+          <div class="wl-card-top">
+            <span class="wl-emoji">${cemoji(d.category)}</span>
+            <span class="wl-disc-badge ${discBadgeClass}">${d.discount_percent}% OFF</span>
+            <div class="wl-urgency-strip ${uc}"></div>
+          </div>
+          ${hasDrop ? `<div class="pdrop-banner"><span class="pdrop-icon">📉</span>Price dropped! Saved extra <span class="pdrop-amount">₹${Math.round(item.price - d.current_price)}</span> since saved</div>` : ''}
+          <div class="wl-card-body">
+            <div>
+              <div class="wl-cat">${d.category}</div>
+              <div class="wl-name">${d.name}</div>
+              <div class="wl-store">📍 ${d.store}</div>
+            </div>
+            <div class="wl-price-row">
+              <span class="wl-price-now">₹${Math.round(d.current_price)}</span>
+              <span class="wl-price-was">₹${Math.round(d.original_price)}</span>
+              <span class="wl-saved-chip">Save ₹${Math.round(d.original_price - d.current_price)}</span>
+            </div>
+            <div class="wl-timer ${uc}" data-expiry="${d.expiry}" data-wid="${item.id}">
+              <div class="t-unit"><span class="t-val" id="wh-${item.id}">--</span><span class="t-lbl">Hrs</span></div>
+              <span class="t-sep">:</span>
+              <div class="t-unit"><span class="t-val" id="wm-${item.id}">--</span><span class="t-lbl">Min</span></div>
+              <span class="t-sep">:</span>
+              <div class="t-unit"><span class="t-val" id="ws-${item.id}">--</span><span class="t-lbl">Sec</span></div>
+            </div>
+            <div class="wl-saved-time">Saved ${fmtTimeAgo(item.savedAt)}</div>
+            <div class="wl-card-actions">
+              <form method="POST" action="${d.grab_url}" style="flex:1;">
+                <button type="submit" class="btn-grab" style="width:100%;">⚡ Grab Deal</button>
+              </form>
+              <button class="btn-rm" onclick="removeWish(${item.id})" title="Remove">🗑</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  /* Tombstone section */
+  const tombSection = document.getElementById('tombstoneSection');
+  const tombGrid    = document.getElementById('tombstoneGrid');
+  const tombBadge   = document.getElementById('tombstoneBadge');
+  if (expiredItems.length) {
+    tombSection.style.display = '';
+    tombBadge.textContent = expiredItems.length;
+    tombGrid.innerHTML = expiredItems.map(item => `
+      <div class="tombstone-card" id="tcard-${item.id}">
+        <span class="ts-emoji">${item.emoji || cemoji(item.live ? item.live.category : '')}</span>
+        <div class="ts-name">${item.name}</div>
+        <div class="ts-price">Was ₹${Math.round(item.price)}</div>
+        <button class="ts-rm" onclick="removeWish(${item.id})" title="Remove">✕</button>
+      </div>`).join('');
+  } else {
+    tombSection.style.display = 'none';
+  }
+}
+
+/* ─── Countdowns ─── */
+function tickCountdowns() {
+  document.querySelectorAll('.wl-timer[data-expiry]').forEach(box => {
+    const wid = box.dataset.wid;
+    const diff = new Date(box.dataset.expiry + 'Z') - new Date();
+    const set = (pfx,v) => { const el=document.getElementById(pfx+'-'+wid); if(el) el.textContent=v; };
+    if (diff <= 0) { set('wh','00'); set('wm','00'); set('ws','00'); return; }
+    set('wh', pad(Math.floor(diff/3600000)));
+    set('wm', pad(Math.floor((diff%3600000)/60000)));
+    set('ws', pad(Math.floor((diff%60000)/1000)));
+  });
+}
+setInterval(tickCountdowns, 1000);
+
+/* ─── Remove from wishlist ─── */
+function removeWish(id) {
+  wishlist = wishlist.filter(x => x.id !== id);
+  localStorage.setItem('dd_wishlist', JSON.stringify(wishlist));
+  renderWishlist();
+  showToast('Removed from wishlist');
+}
+
+/* ─── Clear all ─── */
+function confirmClearAll() {
+  if (!wishlist.length) return;
+  if (confirm('Clear your entire saved deals list? Smart Watch items are kept.')) {
+    wishlist = [];
+    localStorage.setItem('dd_wishlist', '[]');
+    renderWishlist();
+    showToast('Saved deals cleared');
+  }
+}
+
+/* ─── Grab all live ─── */
+function grabAll() {
+  const liveItems = wishlist.filter(item => LIVE_DEALS[item.id]);
+  if (!liveItems.length) return;
+  const first = liveItems[0];
+  const live  = LIVE_DEALS[first.id];
+  const names = liveItems.map(x => '• ' + x.name).join('\n');
+  if (confirm('Grab all ' + liveItems.length + ' live deals?\n\n' + names + '\n\nYou will be taken to each deal page.')) {
+    window.location.href = live.grab_url;
+  }
+}
+
+/* ─── Toast ─── */
+function showToast(msg) {
+  const t = document.getElementById('ddToast');
+  t.innerHTML = msg; t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+/* ─── Init ─── */
+renderWishlist();
+tickCountdowns();
+</script>
+
+{% include "footer.html" %}

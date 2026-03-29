@@ -25,10 +25,6 @@ class RegisterForm(FlaskForm):
     name     = StringField("Name",     validators=[DataRequired(), Length(min=2, max=50)])
     email    = StringField("Email",    validators=[DataRequired(), Email()])
     password = PasswordField("Password", validators=[DataRequired(), Length(min=6)])
-    # ── CHANGED: 'city' replaced with 'address' ──────────────────────────────
-    # Full address is geocoded once at registration to derive (lat, lon, city).
-    # Retailers: coordinates are fixed permanently after this point.
-    # Customers: can update later via /update_location.
     address  = StringField(
         "Full Address",
         validators=[DataRequired(), Length(min=5, max=300)],
@@ -44,11 +40,7 @@ class LoginForm(FlaskForm):
 
 
 class UpdateAddressForm(FlaskForm):
-    """
-    Customer-only: update current location to receive better deal relevance scores.
-    Geocodes the supplied address and writes (lat, lon, city) to the User row.
-    NOTE: This form must NEVER be accessible to retailer accounts — enforced in the route.
-    """
+    """Customer-only: update current location for distance-aware deal ranking."""
     address = StringField(
         "Your Current Address / Area",
         validators=[DataRequired(), Length(min=5, max=300)],
@@ -82,15 +74,30 @@ class EditProductForm(FlaskForm):
 
 
 class LaunchDealForm(FlaskForm):
-    """
-    Re-launch an existing paused/inactive product as a deal.
-    product_id      : populated dynamically from inactive stock list
-    closing_time    : suggested by /api/suggest_closing_time, editable by retailer
-    discount_override: optional; if blank, ML / fallback pricing is used
-    """
+    """Re-launch an existing paused/inactive product as a deal."""
     product_id        = SelectField("Select Product", coerce=int, validators=[DataRequired()])
     closing_time      = DateTimeLocalField("Deal Closing Time", format="%Y-%m-%dT%H:%M",
                                            validators=[DataRequired()])
     discount_override = IntegerField("Override Discount % (optional, 1–85)",
                                      validators=[Optional(), NumberRange(min=1, max=85)])
     submit            = SubmitField("🚀 Go Live")
+
+
+class WishlistItemForm(FlaskForm):
+    """
+    Customer Smart-Watch Wishlist item.
+
+    item_name           : what the customer is looking for (natural language)
+    max_price_threshold : optional max price they're willing to pay
+    """
+    item_name = StringField(
+        "What are you looking for?",
+        validators=[DataRequired(), Length(min=2, max=200)],
+        description="e.g. 'Amul Butter', 'Milk', 'Headphones', 'Chocolate'"
+    )
+    max_price_threshold = FloatField(
+        "Max price you'd pay (₹) — optional",
+        validators=[Optional(), NumberRange(min=1)],
+        description="Leave blank to get notified for any price"
+    )
+    submit = SubmitField("🎯 Add to Smart Watch")

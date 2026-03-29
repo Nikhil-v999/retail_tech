@@ -1,0 +1,343 @@
+{% include "header.html" %}
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:#07090f; --panel:#0c1018; --surface:#111827; --surface2:#161f30;
+  --border:rgba(255,255,255,0.055); --border2:rgba(255,255,255,0.09);
+  --amber:#f5a623; --amber-glow:rgba(245,166,35,0.15);
+  --green:#22d47a; --green-glow:rgba(34,212,122,0.12);
+  --red:#ff4d6a;   --red-glow:rgba(255,77,106,0.12);
+  --blue:#4d9fff;  --blue-glow:rgba(77,159,255,0.12);
+  --violet:#a78bfa; --violet-glow:rgba(167,139,250,0.12);
+  --pink:#f472b6;  --pink-glow:rgba(244,114,182,0.12);
+  --text:#dde3ed; --muted:#3d4f63; --sub:#6b7f96;
+  --sb-full:240px; --sb-mini:62px;
+  --radius-md:12px; --radius-lg:18px;
+  --trans:0.28s cubic-bezier(0.4,0,0.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);min-height:100vh;}
+.rd-shell{display:flex;min-height:calc(100vh - 80px);}
+
+/* COLLAPSIBLE SIDEBAR */
+.rd-sidebar{width:var(--sb-mini);flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);padding:20px 10px 32px;display:flex;flex-direction:column;gap:4px;position:sticky;top:80px;height:calc(100vh - 80px);overflow:hidden;overflow-y:auto;transition:width var(--trans);z-index:100;}
+.rd-sidebar:hover{width:var(--sb-full);box-shadow:4px 0 28px rgba(0,0,0,0.4);}
+.rd-sidebar::-webkit-scrollbar{width:3px;}
+.rd-sidebar::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+.sb-brand{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;color:var(--green);padding:0 4px 18px;border-bottom:1px solid var(--border);margin-bottom:10px;white-space:nowrap;overflow:hidden;}
+.sb-brand-icon{font-size:20px;flex-shrink:0;}
+.sb-brand-text{opacity:0;transition:opacity var(--trans);}
+.rd-sidebar:hover .sb-brand-text{opacity:1;}
+.sb-section{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:14px 4px 5px;white-space:nowrap;overflow:hidden;opacity:0;transition:opacity var(--trans);}
+.rd-sidebar:hover .sb-section{opacity:1;}
+.sb-link{display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--radius-md);color:var(--sub);text-decoration:none;font-size:14.5px;font-weight:600;transition:all 0.16s;border:1px solid transparent;white-space:nowrap;overflow:hidden;}
+.sb-link:hover{background:var(--surface);color:var(--text);border-color:var(--border);}
+.sb-link.active{background:var(--green-glow);color:var(--green);border-color:rgba(34,212,122,0.22);}
+.sb-icon{font-size:18px;width:24px;text-align:center;flex-shrink:0;}
+.sb-label-text{opacity:0;transition:opacity var(--trans);}
+.rd-sidebar:hover .sb-label-text{opacity:1;}
+.sb-divider{height:1px;background:var(--border);margin:8px 0;flex-shrink:0;}
+
+/* MAIN */
+.notif-main{flex:1;padding:32px 40px 60px;min-width:0;}
+
+.page-topbar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;gap:12px;flex-wrap:wrap;}
+.page-title{font-size:26px;font-weight:800;letter-spacing:-0.4px;}
+.page-sub{font-size:13px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:4px;}
+.notif-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px;}
+.btn-ctrl{display:inline-flex;align-items:center;gap:7px;background:var(--surface);color:var(--sub);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;padding:9px 18px;border-radius:var(--radius-md);border:1px solid var(--border2);cursor:pointer;transition:all 0.18s;text-decoration:none;}
+.btn-ctrl:hover{background:var(--surface2);color:var(--text);}
+.btn-ctrl.danger:hover{background:var(--red-glow);color:var(--red);border-color:rgba(255,77,106,0.3);}
+
+/* Filter + sort row */
+.filter-row{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center;}
+.f-chip{font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 15px;border-radius:20px;border:1px solid var(--border2);background:var(--panel);color:var(--sub);cursor:pointer;transition:all 0.16s;user-select:none;}
+.f-chip:hover{color:var(--text);border-color:var(--border2);}
+/* Per-type chip colours */
+.f-chip.active            {background:var(--green-glow);border-color:rgba(34,212,122,0.3);color:var(--green);}
+.f-chip.fc-unread.active  {background:var(--red-glow);border-color:rgba(255,77,106,0.3);color:var(--red);}
+.f-chip.fc-alert.active   {background:var(--red-glow);border-color:rgba(255,77,106,0.3);color:var(--red);}
+.f-chip.fc-deal.active    {background:var(--green-glow);border-color:rgba(34,212,122,0.3);color:var(--green);}
+.f-chip.fc-system.active  {background:var(--blue-glow);border-color:rgba(77,159,255,0.3);color:var(--blue);}
+.f-chip.fc-pdrop.active   {background:var(--violet-glow);border-color:rgba(167,139,250,0.3);color:var(--violet);}
+.f-chip.fc-expiring.active{background:var(--amber-glow);border-color:rgba(245,166,35,0.3);color:var(--amber);}
+.f-chip.fc-grab.active    {background:var(--green-glow);border-color:rgba(34,212,122,0.3);color:var(--green);}
+.sort-row{margin-left:auto;}
+.sort-sel{background:var(--panel);border:1px solid var(--border2);color:var(--sub);border-radius:10px;padding:7px 14px;font-family:'JetBrains Mono',monospace;font-size:11px;outline:none;cursor:pointer;}
+.sort-sel:focus{border-color:rgba(34,212,122,0.4);}
+
+/* Notification list */
+.notif-card-list{display:flex;flex-direction:column;gap:0;}
+.notif-card-wrap{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;}
+.notif-card{display:flex;align-items:flex-start;gap:14px;padding:18px 20px;background:var(--panel);border-bottom:1px solid rgba(255,255,255,0.035);cursor:pointer;transition:background 0.14s;position:relative;}
+.notif-card:first-child{border-radius:var(--radius-lg) var(--radius-lg) 0 0;}
+.notif-card:last-child{border-bottom:none;border-radius:0 0 var(--radius-lg) var(--radius-lg);}
+.notif-card:only-child{border-radius:var(--radius-lg);}
+.notif-card:hover{background:rgba(255,255,255,0.02);}
+.notif-card.unread{background:rgba(34,212,122,0.04);}
+.notif-card.unread::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--green);border-radius:0 2px 2px 0;}
+
+/* Type-specific unread accent */
+.notif-card.unread.nt-price_drop::before{background:var(--violet);}
+.notif-card.unread.nt-expiring_soon::before{background:var(--amber);}
+.notif-card.unread.nt-grab_confirmed::before{background:var(--green);}
+.notif-card.unread.nt-alert::before{background:var(--red);}
+
+.nc-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;margin-top:2px;}
+.nc-icon.alert         {background:var(--red-glow);}
+.nc-icon.deal          {background:var(--green-glow);}
+.nc-icon.system        {background:var(--blue-glow);}
+.nc-icon.price_drop    {background:var(--violet-glow);}
+.nc-icon.expiring_soon {background:var(--amber-glow);}
+.nc-icon.grab_confirmed{background:var(--green-glow);}
+
+.nc-body{flex:1;min-width:0;}
+.nc-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.nc-text{font-size:13px;color:var(--sub);line-height:1.5;}
+.nc-meta{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;}
+.nc-time{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
+.nc-badge{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:2px 9px;border-radius:20px;font-weight:700;}
+.nc-badge.alert         {background:var(--red-glow);  color:var(--red);   border:1px solid rgba(255,77,106,0.2);}
+.nc-badge.deal          {background:var(--green-glow);color:var(--green); border:1px solid rgba(34,212,122,0.2);}
+.nc-badge.system        {background:var(--blue-glow); color:var(--blue);  border:1px solid rgba(77,159,255,0.2);}
+.nc-badge.price_drop    {background:var(--violet-glow);color:var(--violet);border:1px solid rgba(167,139,250,0.2);}
+.nc-badge.expiring_soon {background:var(--amber-glow);color:var(--amber); border:1px solid rgba(245,166,35,0.2);}
+.nc-badge.grab_confirmed{background:var(--green-glow);color:var(--green); border:1px solid rgba(34,212,122,0.2);}
+
+.nc-mark-read{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--green);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:6px;transition:background 0.15s;flex-shrink:0;margin-top:2px;white-space:nowrap;}
+.nc-mark-read:hover{background:rgba(34,212,122,0.1);}
+
+.notif-empty-full{padding:80px 20px;text-align:center;color:var(--muted);}
+.notif-empty-full span{font-size:52px;display:block;margin-bottom:18px;}
+.notif-empty-full h3{font-size:18px;color:var(--sub);margin-bottom:8px;}
+.notif-empty-full p{font-size:14px;}
+.loading-state{padding:60px 20px;text-align:center;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:13px;}
+
+/* Stats strip */
+.notif-stats{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+.nstat{display:inline-flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--sub);}
+.nstat strong{color:var(--text);}
+.nstat.ns-unread{border-color:rgba(255,77,106,0.2);background:var(--red-glow);}
+.nstat.ns-unread strong{color:var(--red);}
+
+@media(max-width:900px){.rd-sidebar{display:none;}.notif-main{padding:20px 16px;}}
+</style>
+
+<div class="rd-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="rd-sidebar">
+    <div class="sb-brand">
+      <span class="sb-brand-icon">⚡</span>
+      <span class="sb-brand-text">DealDrop</span>
+    </div>
+    <div class="sb-section">Discover</div>
+    <a href="{{ url_for('customer_dashboard') }}" class="sb-link">
+      <span class="sb-icon">🛒</span><span class="sb-label-text"> Deals Feed</span>
+    </a>
+    <a href="{{ url_for('update_location') }}" class="sb-link">
+      <span class="sb-icon">📍</span><span class="sb-label-text"> My Location</span>
+    </a>
+    <div class="sb-divider"></div>
+    <div class="sb-section">Account</div>
+    <a href="{{ url_for('wishlist') }}" class="sb-link">
+      <span class="sb-icon">❤️</span><span class="sb-label-text"> Wishlist</span>
+    </a>
+    <a href="{{ url_for('customer_notifications') }}" class="sb-link active">
+      <span class="sb-icon">🔔</span><span class="sb-label-text"> Notifications</span>
+    </a>
+    <a href="{{ url_for('logout') }}" class="sb-link">
+      <span class="sb-icon">🚪</span><span class="sb-label-text"> Logout</span>
+    </a>
+  </aside>
+
+  <main class="notif-main">
+
+    <div class="page-topbar">
+      <div>
+        <div class="page-title">🔔 Notifications</div>
+        <div class="page-sub">Your complete notification history</div>
+      </div>
+      <div class="notif-controls">
+        <button class="btn-ctrl" onclick="markAllReadFull()">✅ Mark All Read</button>
+        <a href="{{ url_for('customer_dashboard') }}" class="btn-ctrl">← Back to Deals</a>
+      </div>
+    </div>
+
+    <!-- Stats strip -->
+    <div class="notif-stats" id="notifStats">
+      <div class="nstat"><span>📋</span> Total: <strong id="snTotal">…</strong></div>
+      <div class="nstat ns-unread"><span>🔴</span> Unread: <strong id="snUnread">…</strong></div>
+      <div class="nstat"><span>📉</span> Price Drops: <strong id="snDrops">…</strong></div>
+      <div class="nstat"><span>✅</span> Grabs: <strong id="snGrabs">…</strong></div>
+    </div>
+
+    <!-- Filter chips + sort -->
+    <div class="filter-row">
+      <span class="f-chip active"         data-f="all"            onclick="applyFilter('all',this)">All</span>
+      <span class="f-chip fc-unread"      data-f="unread"         onclick="applyFilter('unread',this)">🔴 Unread</span>
+      <span class="f-chip fc-alert"       data-f="alert"          onclick="applyFilter('alert',this)">⚠️ Alert</span>
+      <span class="f-chip fc-deal"        data-f="deal"           onclick="applyFilter('deal',this)">⚡ Deal</span>
+      <span class="f-chip fc-pdrop"       data-f="price_drop"     onclick="applyFilter('price_drop',this)">📉 Price Drop</span>
+      <span class="f-chip fc-expiring"    data-f="expiring_soon"  onclick="applyFilter('expiring_soon',this)">⏰ Expiring</span>
+      <span class="f-chip fc-grab"        data-f="grab_confirmed" onclick="applyFilter('grab_confirmed',this)">✅ Grab Confirmed</span>
+      <span class="f-chip fc-system"      data-f="system"         onclick="applyFilter('system',this)">ℹ️ System</span>
+      <div class="sort-row">
+        <select class="sort-sel" id="notifSort" onchange="renderFiltered()">
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+          <option value="unread">Unread First</option>
+          <option value="type">Group by Type</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Notification list -->
+    <div id="notifContainer">
+      <div class="loading-state">Loading notifications…</div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const NTYPE_ICON = {
+  alert:          '⚠️',
+  deal:           '⚡',
+  system:         'ℹ️',
+  price_drop:     '📉',
+  expiring_soon:  '⏰',
+  grab_confirmed: '✅',
+};
+const NTYPE_LABEL = {
+  alert:          'Alert',
+  deal:           'Deal',
+  system:         'System',
+  price_drop:     'Price Drop',
+  expiring_soon:  'Expiring',
+  grab_confirmed: 'Grab Confirmed',
+};
+
+let allNotifs  = [];
+let activeFilter = 'all';
+
+async function loadAll() {
+  try {
+    const data = await (await fetch('/api/notifications')).json();
+    allNotifs = data;
+    updateStats();
+    renderFiltered();
+  } catch(e) {
+    document.getElementById('notifContainer').innerHTML =
+      '<div class="loading-state">Failed to load notifications. Please refresh.</div>';
+  }
+}
+
+function updateStats() {
+  const total  = allNotifs.length;
+  const unread = allNotifs.filter(n => !n.read).length;
+  const drops  = allNotifs.filter(n => n.ntype === 'price_drop').length;
+  const grabs  = allNotifs.filter(n => n.ntype === 'grab_confirmed').length;
+  document.getElementById('snTotal').textContent  = total;
+  document.getElementById('snUnread').textContent = unread;
+  document.getElementById('snDrops').textContent  = drops;
+  document.getElementById('snGrabs').textContent  = grabs;
+}
+
+function applyFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.f-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderFiltered();
+}
+
+function renderFiltered() {
+  const sort = document.getElementById('notifSort').value;
+  let items = [...allNotifs];
+
+  // Filter
+  if (activeFilter === 'unread') {
+    items = items.filter(n => !n.read);
+  } else if (activeFilter !== 'all') {
+    items = items.filter(n => n.ntype === activeFilter);
+  }
+
+  // Sort
+  switch(sort) {
+    case 'oldest': items.sort((a,b) => a.id - b.id); break;
+    case 'unread': items.sort((a,b) => (a.read?1:0) - (b.read?1:0)); break;
+    case 'type':   items.sort((a,b) => a.ntype.localeCompare(b.ntype)); break;
+    default:       items.sort((a,b) => b.id - a.id); // newest
+  }
+
+  const container = document.getElementById('notifContainer');
+
+  if (!items.length) {
+    const msgMap = {
+      unread: ['🎉', 'All caught up!', 'No unread notifications.'],
+      price_drop: ['📉', 'No price drops yet', 'We\'ll notify you when a wishlisted item drops in price.'],
+      grab_confirmed: ['🛍️', 'No grabs yet', 'When you grab a deal, it shows up here.'],
+      expiring_soon: ['⏰', 'No expiry alerts', 'Urgent deals will trigger alerts here.'],
+    };
+    const [icon, h, p] = msgMap[activeFilter] || ['🔕', 'No notifications here', 'Try a different filter.'];
+    container.innerHTML = `
+      <div class="notif-empty-full">
+        <span>${icon}</span>
+        <h3>${h}</h3>
+        <p>${p}</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = `<div class="notif-card-wrap">${items.map(n => `
+    <div class="notif-card ${n.read ? '' : 'unread'} nt-${n.ntype}" id="nc-${n.id}" onclick="markOneFull(${n.id}, this)">
+      <div class="nc-icon ${n.ntype}">${NTYPE_ICON[n.ntype] || 'ℹ️'}</div>
+      <div class="nc-body">
+        <div class="nc-title">${n.title}</div>
+        <div class="nc-text">${n.body}</div>
+        <div class="nc-meta">
+          <span class="nc-time">${n.created_at}</span>
+          <span class="nc-badge ${n.ntype}">${NTYPE_LABEL[n.ntype] || n.ntype}</span>
+        </div>
+      </div>
+      ${!n.read ? `<button class="nc-mark-read" onclick="event.stopPropagation();markOneFull(${n.id},document.getElementById('nc-${n.id}'))">Mark read</button>` : ''}
+    </div>
+  `).join('')}</div>`;
+}
+
+async function markOneFull(id, el) {
+  if (!el) return;
+  el.classList.remove('unread');
+  // Remove the mark-read button
+  const btn = el.querySelector('.nc-mark-read');
+  if(btn) btn.remove();
+  await fetch('/api/notifications/mark_read', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({id})
+  });
+  const notif = allNotifs.find(n => n.id === id);
+  if(notif) notif.read = true;
+  updateStats();
+}
+
+async function markAllReadFull() {
+  await fetch('/api/notifications/mark_read', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({})
+  });
+  allNotifs.forEach(n => n.read = true);
+  document.querySelectorAll('.notif-card.unread').forEach(el => {
+    el.classList.remove('unread');
+    const btn = el.querySelector('.nc-mark-read');
+    if(btn) btn.remove();
+  });
+  updateStats();
+}
+
+loadAll();
+</script>
+
+{% include "footer.html" %}

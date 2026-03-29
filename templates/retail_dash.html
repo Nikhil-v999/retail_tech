@@ -178,6 +178,12 @@ body{background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);min-he
 .pname{font-weight:700;font-size:15px;color:var(--text);margin-bottom:3px;}
 .pcat{display:inline-block;background:var(--surface);border:1px solid var(--border);color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 8px;border-radius:20px;}
 .p-orig{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;color:var(--text);}
+.deal-price-cell{display:flex;flex-direction:column;gap:4px;}
+.dp-price{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;color:var(--green);}
+.dp-badge{display:inline-flex;align-items:center;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;background:var(--green-glow);border:1px solid rgba(34,212,122,0.25);color:var(--green);padding:2px 8px;border-radius:20px;width:fit-content;}
+.dp-badge.high-disc{background:rgba(251,146,60,0.12);border-color:rgba(251,146,60,0.3);color:#fb923c;}
+.dp-badge.crit-disc{background:var(--red-glow);border-color:rgba(255,77,106,0.3);color:var(--red);}
+.dp-none{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted);}
 .vel-val{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--violet);}
 .stk-badge{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;}
 .stk-badge.ok{color:var(--text);}
@@ -388,6 +394,7 @@ body{background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);min-he
           <tr>
             <th onclick="sortBy('name',event)">Product</th>
             <th onclick="sortBy('price',event)">MRP</th>
+            <th>Deal Price</th>
             <th onclick="sortBy('velocity',event)">Velocity</th>
             <th onclick="sortBy('stock',event)">Stock</th>
             <th onclick="sortBy('expiry',event)">Deal Expires</th>
@@ -412,6 +419,18 @@ body{background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);min-he
               <span class="pcat">{{ p.category or '—' }}</span>
             </td>
             <td><div class="p-orig">₹{{ "%.2f"|format(p.original_price) }}</div></td>
+            <td>
+              {% if p.ai_suggested_discount is not none and p.deal_active and not p.is_expired %}
+                <div class="deal-price-cell">
+                  <span class="dp-price">₹{{ "%.2f"|format(p.current_price) }}</span>
+                  <span class="dp-badge {% if p.discount_percent >= 50 %}crit-disc{% elif p.discount_percent >= 30 %}high-disc{% endif %}">
+                    {{ p.discount_percent }}% OFF
+                  </span>
+                </div>
+              {% else %}
+                <span class="dp-none">—</span>
+              {% endif %}
+            </td>
             <td><span class="vel-val">{{ "%.1f"|format(p.velocity) }}/day</span></td>
             <td>
               <span class="stk-badge {% if p.stock <= 2 %}critical{% elif p.stock <= 5 %}low{% else %}ok{% endif %}">{{ p.stock }}</span>
