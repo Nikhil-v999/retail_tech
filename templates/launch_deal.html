@@ -345,7 +345,8 @@ body { background:var(--bg); font-family:'Syne',sans-serif; color:var(--text); m
                data-price="{{ p.original_price }}"
                data-fullname="{{ p.name|e }}"
                data-fullcat="{{ p.category|e }}"
-               onclick="selectProduct({{ p.id }}, this)">
+               onclick="selectProduct({{ p.id }}, this)"
+               data-has-deal="{{ 'yes' if p.ai_suggested_discount is not none else 'no' }}">
             <span class="pc-emoji">{{ em }}</span>
             <div class="pc-name">{{ p.name }}</div>
             <span class="pc-cat">{{ p.category }}</span>
@@ -462,9 +463,11 @@ body { background:var(--bg); font-family:'Syne',sans-serif; color:var(--text); m
     {% else %}
     <div class="no-products">
       <div style="font-size:48px;margin-bottom:16px;">📭</div>
-      <h3>No inactive stock found</h3>
-      <p style="font-size:13px;">All your products are either already live or out of stock.<br>
-        <a href="{{ url_for('add_product') }}" style="color:var(--amber);font-weight:700;">Add a new product</a> first.
+      <h3>No products available to launch</h3>
+      <p style="font-size:13px;">
+        All your products either already have an active deal or are out of stock.<br>
+        <a href="{{ url_for('add_product') }}" style="color:var(--amber);font-weight:700;">Add a new product</a>
+        or pause an existing deal to re-launch it here.
       </p>
     </div>
     {% endif %}

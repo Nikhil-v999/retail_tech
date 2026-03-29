@@ -668,13 +668,15 @@ function renderWishlist() {
     grid.innerHTML = items.map(item => {
       const d = item.live;
       const uc = urgClass(d.urgency);
-      const hasDrop = item.priceDropPct > 0;
+      const hasDrop = item.priceDropPct > 0 && d.discount_percent > 0;
       const discBadgeClass = d.urgency === 'critical' ? 'crit' : d.urgency === 'high' ? 'high' : '';
       return `
         <div class="wl-card ${hasDrop ? 'has-drop' : ''}" id="wlcard-${item.id}">
           <div class="wl-card-top">
             <span class="wl-emoji">${cemoji(d.category)}</span>
-            <span class="wl-disc-badge ${discBadgeClass}">${d.discount_percent}% OFF</span>
+            ${d.discount_percent > 0
+              ? `<span class="wl-disc-badge ${discBadgeClass}">${d.discount_percent}% OFF</span>`
+              : `<span class="wl-disc-badge" style="background:rgba(107,127,150,0.18);color:var(--sub);">Full Price</span>`}
             <div class="wl-urgency-strip ${uc}"></div>
           </div>
           ${hasDrop ? `<div class="pdrop-banner"><span class="pdrop-icon">📉</span>Price dropped! Saved extra <span class="pdrop-amount">₹${Math.round(item.price - d.current_price)}</span> since saved</div>` : ''}
@@ -685,9 +687,10 @@ function renderWishlist() {
               <div class="wl-store">📍 ${d.store}</div>
             </div>
             <div class="wl-price-row">
-              <span class="wl-price-now">₹${Math.round(d.current_price)}</span>
+              <span class="wl-price-now" style="${d.discount_percent > 0 ? '' : 'color:var(--text);'}">₹${Math.round(d.current_price)}</span>
+              ${d.discount_percent > 0 ? `
               <span class="wl-price-was">₹${Math.round(d.original_price)}</span>
-              <span class="wl-saved-chip">Save ₹${Math.round(d.original_price - d.current_price)}</span>
+              <span class="wl-saved-chip">Save ₹${Math.round(d.original_price - d.current_price)}</span>` : ''}
             </div>
             <div class="wl-timer ${uc}" data-expiry="${d.expiry}" data-wid="${item.id}">
               <div class="t-unit"><span class="t-val" id="wh-${item.id}">--</span><span class="t-lbl">Hrs</span></div>
@@ -699,7 +702,7 @@ function renderWishlist() {
             <div class="wl-saved-time">Saved ${fmtTimeAgo(item.savedAt)}</div>
             <div class="wl-card-actions">
               <form method="POST" action="${d.grab_url}" style="flex:1;">
-                <button type="submit" class="btn-grab" style="width:100%;">⚡ Grab Deal</button>
+                <button type="submit" class="btn-grab" style="width:100%;">${d.discount_percent > 0 ? "⚡ Grab Deal" : "🛒 Buy Now"}</button>
               </form>
               <button class="btn-rm" onclick="removeWish(${item.id})" title="Remove">🗑</button>
             </div>

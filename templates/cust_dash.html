@@ -128,6 +128,8 @@ body{background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);min-he
 .kpi-card.k-blue:hover{border-color:rgba(77,159,255,0.5);box-shadow:0 0 28px rgba(77,159,255,0.2),0 10px 36px rgba(0,0,0,0.3);transform:translateY(-4px);}
 .kpi-icon{font-size:24px;display:block;margin-bottom:14px;}
 .kpi-value{font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:600;line-height:1;margin-bottom:9px;}
+.fs-26{font-size:26px !important;}
+.fs-36{font-size:36px !important;}
 .kpi-card.k-green .kpi-value{color:var(--green);}
 .kpi-card.k-red   .kpi-value{color:var(--red);}
 .kpi-card.k-amber .kpi-value{color:var(--amber);}
@@ -379,8 +381,9 @@ body{background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);min-he
       </div>
       <div class="kpi-card k-blue">
         <span class="kpi-icon">💰</span>
-        <div class="kpi-value" style="font-size:{% if products %}26{% else %}36{% endif %}px;">
-          {% if products %}{{ (products | map(attribute='discount_percent') | list | sum // products|length) }}%{% else %}—{% endif %}
+        <div class="kpi-value {% if products %}fs-26{% else %}fs-36{% endif %}">
+          {% set valid_discounts = products | map(attribute='discount_percent') | select('gt', 0) | list %}
+          {% if valid_discounts %}{{ (valid_discounts | sum // valid_discounts|length) }}%{% else %}0%{% endif %}
         </div>
         <div class="kpi-label">Avg Discount</div>
       </div>
@@ -388,7 +391,7 @@ body{background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);min-he
 
     <!-- Section header -->
     <div class="sec-hdr">
-      <div class="sec-title">🛒 All Active Deals <span class="sec-badge" id="visibleCount">{{ products|length }}</span></div>
+      <div class="sec-title">🛒 All Products & Deals <span class="sec-badge" id="visibleCount">{{ products|length }}</span></div>
       <div class="view-toggle">
         <button class="vt-btn active" id="btnGrid" onclick="setView('grid')" title="Grid view">⊞</button>
         <button class="vt-btn" id="btnList" onclick="setView('list')" title="List view">☰</button>
@@ -464,9 +467,11 @@ body{background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);min-he
 
           <div class="card-img-zone">
             <span class="card-emoji">{{ cemoji(p.category) }}</span>
+            {% if p.discount_percent and p.discount_percent > 0 %}
             <span class="disc-badge {% if p.urgency_level=='critical' %}critical{% elif p.urgency_level=='high' %}high{% endif %}">
               {{ p.discount_percent }}% OFF
             </span>
+            {% endif %}
             <span class="stock-badge {% if p.stock <= 3 %}low-stock{% endif %}">
               {% if p.stock <= 3 %}🔥 {{ p.stock }} left!{% else %}{{ p.stock }} in stock{% endif %}
             </span>
@@ -493,8 +498,10 @@ body{background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);min-he
             <div class="card-col-price">
               <div class="pricing-row">
                 <span class="price-now">₹{{ "%.0f"|format(p.current_price) }}</span>
+                {% if p.discount_percent and p.discount_percent > 0 %}
                 <span class="price-was">₹{{ "%.0f"|format(p.original_price) }}</span>
                 <span class="savings-chip">Save ₹{{ "%.0f"|format(p.original_price - p.current_price) }}</span>
+                {% endif %}
               </div>
             </div>
 
@@ -516,10 +523,11 @@ body{background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);min-he
               </span>
               <div class="card-actions">
                 <button class="btn-wish" id="wish-{{ p.id }}"
-                        onclick="toggleWish({{ p.id }},'{{ p.name|e }}','{{ cemoji(p.category)|trim }}',{{ p.current_price }},{{ p.original_price }})"
+                        value="{{ p.id }}||{{ p.name|e }}||{{ cemoji(p.category)|trim }}||{{ p.current_price }}||{{ p.original_price }}"
+                        onclick="handleWishClick(this)"
                         title="Wishlist">❤️</button>
                 <form method="POST" action="{{ url_for('grab_deal', product_id=p.id) }}" style="flex:1;">
-                  <button type="submit" class="btn-grab">⚡ Grab Deal</button>
+                  <button type="submit" class="btn-grab">{% if p.discount_percent and p.discount_percent > 0 %}⚡ Grab Deal{% else %}🛒 Buy Now{% endif %}</button>
                 </form>
               </div>
             </div>
@@ -685,6 +693,14 @@ wishlist.forEach(item => {
   const btn = document.getElementById('wish-'+item.id); if(btn) btn.classList.add('active');
   const card = document.getElementById('card-'+item.id); if(card) card.classList.add('wishlisted');
 });
+
+function handleWishClick(btn) {
+  if (!btn || !btn.value) return;
+  const parts = btn.value.split('||');
+  if (parts.length === 5) {
+    toggleWish(+parts[0], parts[1], parts[2], +parts[3], +parts[4]);
+  }
+}
 
 function toggleWish(id, name, emoji, price, originalPrice) {
   const idx  = wishlist.findIndex(x => x.id===id);

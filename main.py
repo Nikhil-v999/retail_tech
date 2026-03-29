@@ -20,7 +20,7 @@ try:
     _GEOPY_AVAILABLE = True
 except ImportError:
     _GEOPY_AVAILABLE = False
-    print("⚠️  geopy not installed. Run: pip install geopy")
+    print("WARNING: geopy not installed. Run: pip install geopy")
 
 from forms import (RegisterForm, LoginForm, AddProductForm,
                    EditProductForm, LaunchDealForm, UpdateAddressForm,
@@ -171,7 +171,8 @@ def calculate_relevance_score(
 ) -> float:
     safe_days    = max(0.01, days_left)
     dist_penalty = 10.0 * distance_km if distance_km is not None else 0.0
-    return (50.0 * discount_percent / 100.0) - dist_penalty + (30.0 / safe_days)
+    # Base 10 so products with 0% discount still rank by urgency/proximity
+    return 10.0 + (50.0 * discount_percent / 100.0) - dist_penalty + (30.0 / safe_days)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -484,16 +485,22 @@ def build_retailer_kpis(retailer_id: int) -> dict:
     ).all()
     unread = Notification.query.filter_by(user_id=retailer_id, read=False).count()
 
+    # FIX: active_deals = products that are live AND have a launched discount.
+    # inventory_visible = all live products (including no-deal ones).
+    active_deals     = sum(1 for p in products if p.deal_active and not p.is_expired and p.ai_suggested_discount is not None)
+    inventory_live   = sum(1 for p in products if p.deal_active and not p.is_expired)
+
     return {
-        "products":       products,
-        "total_products": len(products),
-        "active_deals":   sum(1 for p in products if p.deal_active and not p.is_expired),
-        "low_stock":      sum(1 for p in products if p.stock <= 5 and not p.is_expired),
-        "expiring_soon":  sum(1 for p in products if 0 < p.hours_left <= 24),
-        "sales_today":    sum(s.quantity_sold for s in today_sales),
-        "revenue_today":  round(sum(s.quantity_sold * s.selling_price for s in today_sales), 2),
-        "total_revenue":  round(sum(s.quantity_sold * s.selling_price for s in all_sales), 2),
-        "unread_notifs":  unread,
+        "products":        products,
+        "total_products":  len(products),
+        "active_deals":    active_deals,
+        "inventory_live":  inventory_live,
+        "low_stock":       sum(1 for p in products if p.stock <= 5 and not p.is_expired),
+        "expiring_soon":   sum(1 for p in products if 0 < p.hours_left <= 24),
+        "sales_today":     sum(s.quantity_sold for s in today_sales),
+        "revenue_today":   round(sum(s.quantity_sold * s.selling_price for s in today_sales), 2),
+        "total_revenue":   round(sum(s.quantity_sold * s.selling_price for s in all_sales), 2),
+        "unread_notifs":   unread,
     }
 
 
@@ -829,11 +836,15 @@ def customer_dashboard():
         return redirect(url_for("home"))
 
     now = datetime.now(timezone.utc)
+
+    # ── FIX: Show ALL products that are active, in-stock, and not expired ──
+    # This includes products added via Add Product (no deal launched) AND
+    # products with an active deal discount. Both are visible to customers.
+    # A product with no deal shows at original price (0% discount).
     products = Product.query.filter(
         Product.deal_active == True,
         Product.expiry_date > now,
         Product.stock > 0,
-        Product.ai_suggested_discount != None,  # only show products with an active deal/discount
     ).all()
 
     user_lat = current_user.lat
@@ -850,6 +861,9 @@ def customer_dashboard():
         else:
             p.distance_km = None
 
+        # ── FIX: Use urgency-based relevance so products with 0% discount
+        # still rank sensibly (by urgency / proximity) rather than scoring 0.
+        # Products with a discount get a bonus so they rank higher.
         p.relevance_score = calculate_relevance_score(
             discount_percent = p.discount_percent,
             distance_km      = p.distance_km,
@@ -956,12 +970,12 @@ def wishlist():
                 .order_by(WishlistItem.created_at.desc())
                 .all())
 
-    # Active live deals with a launched discount (for the localStorage-powered deal cards)
+    # FIX: show ALL active, non-expired, in-stock products so the wishlist page
+    # reflects the same catalog the customer sees on the dashboard.
     live_products = Product.query.filter(
         Product.deal_active == True,
         Product.expiry_date > now,
         Product.stock > 0,
-        Product.ai_suggested_discount != None,
     ).all()
 
     return render_template(
@@ -1009,19 +1023,19 @@ def api_deals_live():
             id_list = [int(x) for x in ids_param.split(",") if x.strip()]
         except ValueError:
             return jsonify({"error": "Invalid ids parameter"}), 400
+        # FIX: include all active products regardless of deal/no-deal state
         products = Product.query.filter(
             Product.id.in_(id_list),
             Product.deal_active == True,
             Product.expiry_date > now,
             Product.stock > 0,
-            Product.ai_suggested_discount != None,
         ).all()
     else:
+        # FIX: show ALL visible products to customer — not just those with discounts
         products = Product.query.filter(
             Product.deal_active == True,
             Product.expiry_date > now,
             Product.stock > 0,
-            Product.ai_suggested_discount != None,
         ).all()
 
     result = {}
@@ -1033,6 +1047,7 @@ def api_deals_live():
             "current_price":    p.current_price,
             "original_price":   p.original_price,
             "discount_percent": p.discount_percent,
+            "has_deal":         p.ai_suggested_discount is not None,
             "urgency":          p.urgency_level,
             "stock":            p.stock,
             "expiry":           p.expiry_date.isoformat(),
@@ -1049,8 +1064,10 @@ def grab_deal(product_id):
     if current_user.role != "customer":
         return redirect(url_for("home"))
     product = db.session.get(Product, product_id)
+    # FIX: allow purchase for any product that is active, in stock, and not expired.
+    # deal_active=True is the "visible" flag — it doesn't require a launched deal discount.
     if not product or product.stock <= 0 or product.is_expired or not product.deal_active:
-        flash("Sorry, this deal is no longer available!", "danger")
+        flash("Sorry, this product is no longer available!", "danger")
         return redirect(url_for("customer_dashboard"))
 
     selling_price = product.current_price
@@ -1059,7 +1076,7 @@ def grab_deal(product_id):
         product.deal_active = False
         push_notification(product.retailer_id,
             f"✅ Sold Out: {product.name}",
-            "All units sold — deal auto-closed. Great work!",
+            "All units sold — product auto-closed. Great work!",
             ntype='deal')
 
     db.session.add(Sale(
@@ -1067,7 +1084,8 @@ def grab_deal(product_id):
         quantity_sold=1, selling_price=selling_price,
     ))
     db.session.commit()
-    flash(f"🎉 You got {product.name} for ₹{selling_price}!", "success")
+    price_label = f"₹{selling_price}" + (f" ({product.discount_percent}% OFF)" if product.discount_percent > 0 else " (full price)")
+    flash(f"🎉 You got {product.name} for {price_label}!", "success")
     return redirect(url_for("customer_dashboard"))
 
 

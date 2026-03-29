@@ -115,8 +115,8 @@ body{background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);min-he
 .dd-flash .alert-info{background:rgba(77,159,255,0.1);border-left:3px solid var(--blue);color:#8dc8ff;}
 
 /* ── KPI GRID ── */
-.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:36px;}
-@media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(3,1fr);}}
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:36px;}
+@media(max-width:1400px){.kpi-grid{grid-template-columns:repeat(3,1fr);}}
 @media(max-width:768px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
 
 .kpi-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);padding:26px 22px 22px;position:relative;overflow:hidden;transition:border-color 0.22s,transform 0.22s,box-shadow 0.22s;cursor:default;}
@@ -331,6 +331,11 @@ body{background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);min-he
 
     <!-- KPI Grid -->
     <div class="kpi-grid">
+      <div class="kpi-card k-amber">
+        <span class="kpi-icon">📦</span>
+        <div class="kpi-value">{{ inventory_live }}</div>
+        <div class="kpi-label">Live Products</div>
+      </div>
       <div class="kpi-card k-green">
         <span class="kpi-icon">⚡</span>
         <div class="kpi-value">{{ active_deals }}</div>
@@ -373,6 +378,7 @@ body{background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);min-he
         <span class="chip chip-paused"   data-filter="paused"  onclick="setFilter('paused',this)">⏸ Paused</span>
         <span class="chip chip-expired"  data-filter="expired" onclick="setFilter('expired',this)">🔴 Expired</span>
         <span class="chip"               data-filter="low"     onclick="setFilter('low',this)">⚠️ Low Stock</span>
+        <span class="chip"               data-filter="nodeal"  onclick="setFilter('nodeal',this)">💤 No Deal Yet</span>
       </div>
       <select class="sort-select" id="sortSelect" onchange="applyFilters()">
         <option value="default">Sort: Default</option>
@@ -406,7 +412,9 @@ body{background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);min-he
         <tbody id="stocksTbody">
           {% for p in products %}
           {% set row_status = 'expired' if p.is_expired else ('live' if p.deal_active else 'paused') %}
+          {% set has_deal = p.ai_suggested_discount is not none and p.deal_active and not p.is_expired %}
           <tr class="row-{{ row_status }}{% if p.urgency_level == 'critical' and not p.is_expired %} row-critical{% endif %}"
+              data-deal="{{ 'yes' if has_deal else 'no' }}"
               data-name="{{ p.name|lower }}"
               data-category="{{ p.category|lower }}"
               data-status="{{ row_status }}"
@@ -425,6 +433,13 @@ body{background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);min-he
                   <span class="dp-price">₹{{ "%.2f"|format(p.current_price) }}</span>
                   <span class="dp-badge {% if p.discount_percent >= 50 %}crit-disc{% elif p.discount_percent >= 30 %}high-disc{% endif %}">
                     {{ p.discount_percent }}% OFF
+                  </span>
+                </div>
+              {% elif not p.is_expired and p.deal_active %}
+                <div class="deal-price-cell">
+                  <span class="dp-price" style="color:var(--sub);">₹{{ "%.2f"|format(p.original_price) }}</span>
+                  <span class="dp-badge" style="background:rgba(107,127,150,0.12);border-color:rgba(107,127,150,0.25);color:var(--sub);">
+                    Full Price
                   </span>
                 </div>
               {% else %}
@@ -506,7 +521,7 @@ function applyFilters(){
   let vis=0;
   rows.forEach(r=>{
     const show=((!q||(r.dataset.name||'').includes(q)||(r.dataset.category||'').includes(q)))
-      &&(activeFilter==='all'||(activeFilter==='live'&&r.dataset.status==='live')||(activeFilter==='paused'&&r.dataset.status==='paused')||(activeFilter==='expired'&&r.dataset.status==='expired')||(activeFilter==='low'&&parseInt(r.dataset.stock)<=5));
+      &&(activeFilter==='all'||(activeFilter==='live'&&r.dataset.status==='live')||(activeFilter==='paused'&&r.dataset.status==='paused')||(activeFilter==='expired'&&r.dataset.status==='expired')||(activeFilter==='low'&&parseInt(r.dataset.stock)<=5)||(activeFilter==='nodeal'&&r.dataset.deal==='no'));
     r.style.display=show?'':'none';if(show)vis++;
   });
   const vr=rows.filter(r=>r.style.display!=='none');
