@@ -6,13 +6,24 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 from datetime import datetime, timezone, date, timedelta
 import os
+import math
+import time
 import joblib
 import numpy as np
 import pandas as pd
 from flask_bootstrap import Bootstrap5
 
+# ── Geopy: graceful import so the app boots even without the package installed ──
+try:
+    from geopy.geocoders import Nominatim
+    from geopy.exc import GeocoderTimedOut, GeocoderServiceError
+    _GEOPY_AVAILABLE = True
+except ImportError:
+    _GEOPY_AVAILABLE = False
+    print("⚠️  geopy not installed. Run: pip install geopy")
+
 from forms import (RegisterForm, LoginForm, AddProductForm,
-                   EditProductForm, LaunchDealForm)
+                   EditProductForm, LaunchDealForm, UpdateAddressForm)
 
 # ═══════════════════════════════════════════════════════════════
 #  APP SETUP
@@ -23,7 +34,7 @@ app = Flask(__name__)
 bootstrap = Bootstrap5(app)
 
 app.config['SECRET_KEY']                  = os.getenv("SECRET_KEY", "change-me-in-production")
-app.config['SQLALCHEMY_DATABASE_URI']     = os.getenv("DATABASE_URL", "sqlite:///dealdrop999.db")
+app.config['SQLALCHEMY_DATABASE_URI']     = os.getenv("DATABASE_URL", "sqlite:///dealdrop99.db")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -80,6 +91,116 @@ MED_TRAFFIC_CITIES = {
 
 
 # ═══════════════════════════════════════════════════════════════
+#  GEOCODING HELPERS  (Phase 1)
+# ═══════════════════════════════════════════════════════════════
+
+# Single module-level Nominatim instance (Nominatim requires a unique user_agent)
+_geolocator = Nominatim(user_agent="dealdrop_v1_geocoder", timeout=6) if _GEOPY_AVAILABLE else None
+
+
+def geocode_address(address_string: str) -> tuple[float | None, float | None, str]:
+    """
+    Geocodes a free-form address string using Nominatim (OpenStreetMap).
+
+    Returns:
+        (lat, lon, city_name)  — city_name may be "" if extraction fails.
+        Returns (None, None, "") on any error so callers can degrade gracefully.
+
+    Rate-limit: Nominatim enforces 1 request/second for unauthenticated usage.
+    We sleep 1.1 s to stay safely within that limit.
+    """
+    if _geolocator is None:
+        print("Geocoder unavailable — geopy not installed.")
+        return None, None, ""
+
+    try:
+        time.sleep(1.1)  # Nominatim policy: max 1 req/s
+        location = _geolocator.geocode(address_string, addressdetails=True, language="en")
+        if location is None:
+            return None, None, ""
+
+        lat = location.latitude
+        lon = location.longitude
+
+        # Extract city from the structured address block Nominatim returns
+        addr = location.raw.get("address", {})
+        city = (
+            addr.get("city")
+            or addr.get("town")
+            or addr.get("village")
+            or addr.get("county")
+            or addr.get("state_district")
+            or ""
+        )
+        return lat, lon, city.strip()
+
+    except GeocoderTimedOut:
+        print(f"Geocoding timed out for: {address_string!r}")
+        return None, None, ""
+    except GeocoderServiceError as exc:
+        print(f"Geocoding service error: {exc}")
+        return None, None, ""
+    except Exception as exc:
+        print(f"Unexpected geocoding error: {exc}")
+        return None, None, ""
+
+
+# ═══════════════════════════════════════════════════════════════
+#  HAVERSINE & RELEVANCE ENGINE  (Phase 2)
+# ═══════════════════════════════════════════════════════════════
+
+def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """
+    Calculates the great-circle distance between two GPS coordinates.
+
+    Uses the Haversine formula — accurate to within ~0.3% for distances
+    up to ~500 km, which comfortably covers any hyperlocal use-case.
+
+    Returns:
+        Distance in kilometres (float).
+    """
+    R = 6_371.0  # Mean Earth radius in km
+    phi1, phi2   = math.radians(lat1), math.radians(lat2)
+    dphi         = math.radians(lat2 - lat1)
+    dlambda      = math.radians(lon2 - lon1)
+
+    a = (math.sin(dphi / 2) ** 2
+         + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2)
+    return R * 2 * math.asin(math.sqrt(a))
+
+
+def calculate_relevance_score(
+    discount_percent: float,
+    distance_km: float | None,
+    days_left: float,
+) -> float:
+    """
+    Composite deal-relevance score for the customer discovery feed.
+
+    Formula (as specified):
+        Score = (50 × Discount% / 100)
+              - (10 × Distance_km)
+              + (30 × 1 / Days_Left)
+
+    Design rationale:
+        • Discount term  — reward steeper discounts (max contribution ~50)
+        • Distance term  — penalise far-away deals; 0 penalty if coords unknown
+        • Urgency term   — boost deals expiring soon (rises steeply as → 0 days)
+
+    Args:
+        discount_percent: 0–100
+        distance_km:      None if either party has no coordinates stored
+        days_left:        fractional days until expiry
+
+    Returns:
+        float — higher is more relevant; list should be sorted descending.
+    """
+    safe_days    = max(0.01, days_left)          # floor to avoid ZeroDivisionError
+    dist_penalty = 10.0 * distance_km if distance_km is not None else 0.0
+    return (50.0 * discount_percent / 100.0) - dist_penalty + (30.0 / safe_days)
+
+
+# ═══════════════════════════════════════════════════════════════
 #  INFERENCE HELPERS
 # ═══════════════════════════════════════════════════════════════
 
@@ -101,15 +222,6 @@ def infer_velocity(category: str) -> float:
 
 # ─────────────────────────────────────────────────────────────
 #  REAL VELOCITY ENGINE
-#
-#  Formula:  velocity = Σ(quantity_sold in window) / observation_days
-#
-#  Window        : last 7 days of Sale rows for this product
-#  observation_days = (last_sale_ts - first_sale_ts).days, floor 1
-#  Fallback      : category baseline if fewer than 2 Sale rows
-#
-#  Why 7 days? Short enough to reflect demand shifts; long enough
-#  to suppress single-spike noise.
 # ─────────────────────────────────────────────────────────────
 def compute_real_velocity(product_id: int, category: str) -> float:
     window_start = datetime.now(timezone.utc) - timedelta(days=7)
@@ -127,9 +239,6 @@ def compute_real_velocity(product_id: int, category: str) -> float:
 
 # ─────────────────────────────────────────────────────────────
 #  ML PREDICTION
-#
-#  ML path  : sklearn GBR pipeline → clip output to [0.0, 0.85]
-#  Returns  : discount fraction, or None (caller uses time fallback)
 # ─────────────────────────────────────────────────────────────
 def predict_discount(store_tier, category, demand_type,
                      days_left, stock, velocity) -> float | None:
@@ -163,13 +272,6 @@ def _time_based_discount(hours_left: float) -> float:
 
 # ─────────────────────────────────────────────────────────────
 #  SMART CLOSING-TIME SUGGESTER
-#
-#  Steps:
-#  1. velocity_per_hour = velocity_per_day / 24
-#  2. raw_hours = stock / velocity_per_hour
-#  3. Apply 10% urgency buffer  → × 0.9
-#  4. Cap at 90% of physical expiry window
-#  5. Floor at 1 hour
 # ─────────────────────────────────────────────────────────────
 def suggest_closing_time(stock: int, velocity: float,
                          expiry_dt: datetime) -> datetime:
@@ -193,7 +295,21 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(200), nullable=False)
     name     = db.Column(db.String(100), nullable=False)
     role     = db.Column(db.String(20),  nullable=False)
-    city     = db.Column(db.String(100), nullable=True)
+
+    # ── UPDATED location fields ───────────────────────────────────────────────
+    # 'city'    : kept for backward-compat & store-tier inference; derived from
+    #             geocoding during registration (may be None for legacy rows).
+    # 'address' : the raw free-text address the user supplied.
+    # 'lat/lon' : WGS-84 decimal degrees; None until first geocode succeeds.
+    #
+    # POLICY: Retailer lat/lon is set ONCE at registration and never changes.
+    #         Customers may update their location via /update_location.
+    city    = db.Column(db.String(100), nullable=True)
+    address = db.Column(db.String(300), nullable=True)
+    lat     = db.Column(db.Float,       nullable=True)
+    lon     = db.Column(db.Float,       nullable=True)
+    # ─────────────────────────────────────────────────────────────────────────
+
     products = db.relationship('Product', backref='retailer', lazy=True,
                                cascade='all, delete-orphan')
 
@@ -404,19 +520,50 @@ def register():
         if User.query.filter_by(email=form.email.data).first():
             flash("Account already exists. Please login.", "warning")
             return redirect(url_for("login"))
+
+        # ── Phase 1: Geocode the address once at registration ─────────────────
+        # Geocoding happens synchronously here. On failure we still create the
+        # account — coordinates are simply left NULL and the app degrades to
+        # city-name-based tiers / no distance filtering.
+        lat, lon, geocoded_city = geocode_address(form.address.data)
+
+        if lat is None:
+            # Non-fatal: warn but allow registration to proceed.
+            flash(
+                "⚠️ We couldn't pinpoint your exact address on the map — "
+                "try a more specific address later. Your account has been created.",
+                "warning"
+            )
+
+        # Derive city for store-tier inference (fall back to first token of address)
+        city_for_tier = geocoded_city or form.address.data.split(",")[0].strip()
+
         new_user = User(
-            email=form.email.data, name=form.name.data,
-            password=generate_password_hash(form.password.data),
-            role=role, city=form.city.data,
+            email    = form.email.data,
+            name     = form.name.data,
+            password = generate_password_hash(form.password.data),
+            role     = role,
+            address  = form.address.data,
+            city     = city_for_tier,   # still used by infer_store_tier
+            lat      = lat,
+            lon      = lon,
         )
         db.session.add(new_user)
         db.session.commit()
+
         if role == "retailer":
             push_notification(new_user.id,
                 "👋 Welcome to DealDrop!",
                 "Add your first product, then launch a flash deal.",
                 ntype='system')
+            if lat is not None:
+                push_notification(new_user.id,
+                    "📍 Store Location Pinned",
+                    f"Your store is geocoded at ({lat:.4f}, {lon:.4f}). "
+                    "This cannot be changed — contact support if incorrect.",
+                    ntype='system')
             db.session.commit()
+
         login_user(new_user)
         return redirect(url_for(
             "retailer_dashboard" if role == "retailer" else "customer_dashboard"
@@ -637,6 +784,13 @@ def delete_product(product_id):
     return redirect(url_for("retailer_dashboard"))
 
 
+@app.route("/notifications")
+@login_required
+def notifications_page():
+    if (r := _require_retailer()): return r
+    return render_template("notifications.html")
+
+
 @app.route("/sales_history")
 @login_required
 def sales_history():
@@ -645,6 +799,156 @@ def sales_history():
              .filter(Product.retailer_id == current_user.id)
              .order_by(Sale.timestamp.desc()).all())
     return render_template("sales_history.html", sales=sales)
+
+
+# ═══════════════════════════════════════════════════════════════
+#  ROUTES — CUSTOMER  (Phase 1 & 2 additions)
+# ═══════════════════════════════════════════════════════════════
+
+@app.route("/customer_dashboard")
+@login_required
+def customer_dashboard():
+    """
+    Phase 2 — Hyperlocal Discovery Engine.
+
+    For every active deal we:
+      1. Compute the Haversine distance from the customer to the retailer.
+         → Skipped (None) when either party's coordinates are unavailable.
+      2. Score each deal with calculate_relevance_score().
+      3. Sort descending by score so the best deals surface first.
+
+    We attach 'distance_km' and 'relevance_score' directly onto the Product
+    objects as transient Python attributes — SQLAlchemy doesn't persist them,
+    but the Jinja template can read them like normal properties.
+    """
+    if current_user.role != "customer":
+        return redirect(url_for("home"))
+
+    now = datetime.now(timezone.utc)
+    products = Product.query.filter(
+        Product.deal_active == True,
+        Product.expiry_date > now,
+        Product.stock > 0,
+    ).all()
+
+    user_lat = current_user.lat
+    user_lon = current_user.lon
+    has_location = (user_lat is not None and user_lon is not None)
+
+    for p in products:
+        retailer_lat = p.retailer.lat
+        retailer_lon = p.retailer.lon
+
+        # ── Distance (km) ───────────────────────────────────────────────────
+        if has_location and retailer_lat is not None and retailer_lon is not None:
+            dist = haversine_distance(user_lat, user_lon, retailer_lat, retailer_lon)
+            p.distance_km = round(dist, 1)
+        else:
+            p.distance_km = None  # no coords → distance unknown
+
+        # ── Relevance score ─────────────────────────────────────────────────
+        p.relevance_score = calculate_relevance_score(
+            discount_percent = p.discount_percent,
+            distance_km      = p.distance_km,
+            days_left        = p.days_left,
+        )
+
+    # Sort: highest relevance first
+    products.sort(key=lambda p: p.relevance_score, reverse=True)
+
+    return render_template(
+        "cust_dash.html",
+        products=products,
+        user_has_location=has_location,
+    )
+
+
+@app.route("/update_location", methods=["GET", "POST"])
+@login_required
+def update_location():
+    """
+    Phase 1 — Customer location update.
+
+    CRITICAL ACCESS POLICY:
+      • Retailers: BLOCKED. Their coordinates are pinned once at registration
+        so that deal relevance scores remain fair and their store-tier inference
+        stays stable. Attempting to access this route redirects them away.
+      • Customers: allowed; re-geocodes their supplied address and updates
+        (address, lat, lon, city) in the User row.
+    """
+    if current_user.role == "retailer":
+        flash(
+            "🔒 Retailer store locations are fixed at registration and cannot be changed. "
+            "Contact support if your address is incorrect.",
+            "warning"
+        )
+        return redirect(url_for("retailer_dashboard"))
+
+    if current_user.role != "customer":
+        return redirect(url_for("home"))
+
+    form = UpdateAddressForm()
+
+    if form.validate_on_submit():
+        new_address = form.address.data.strip()
+        lat, lon, geocoded_city = geocode_address(new_address)
+
+        if lat is None:
+            flash(
+                "⚠️ We couldn't find that location. "
+                "Try adding a city name or pin code for better results.",
+                "warning"
+            )
+            # Re-render form with the submitted value preserved
+            return render_template("update_location.html", form=form)
+
+        current_user.address = new_address
+        current_user.lat     = lat
+        current_user.lon     = lon
+        if geocoded_city:
+            current_user.city = geocoded_city   # refresh city for store-tier display
+
+        db.session.commit()
+        flash(
+            f"📍 Location updated to ({lat:.4f}, {lon:.4f}). "
+            "Deal rankings will now reflect your new position!",
+            "success"
+        )
+        return redirect(url_for("customer_dashboard"))
+
+    # GET: pre-fill with whatever address is already on record
+    if request.method == "GET" and current_user.address:
+        form.address.data = current_user.address
+
+    return render_template("update_location.html", form=form)
+
+
+@app.route("/grab_deal/<int:product_id>", methods=["POST"])
+@login_required
+def grab_deal(product_id):
+    if current_user.role != "customer":
+        return redirect(url_for("home"))
+    product = db.session.get(Product, product_id)
+    if not product or product.stock <= 0 or product.is_expired or not product.deal_active:
+        flash("Sorry, this deal is no longer available!", "danger")
+        return redirect(url_for("customer_dashboard"))
+
+    selling_price = product.current_price   # freeze at grab time
+    product.stock -= 1
+    if product.stock == 0:
+        product.deal_active = False
+        push_notification(product.retailer_id,
+            f"✅ Sold Out: {product.name}",
+            "All units sold — deal auto-closed. Great work!",
+            ntype='deal')
+
+    db.session.add(Sale(
+        product_id=product.id, customer_id=current_user.id,
+        quantity_sold=1, selling_price=selling_price,
+    ))
+    db.session.commit()
+    flash(f"🎉 You got {product.name} for ₹{selling_price}!", "success")
+    return redirect(url_for("customer_dashboard"))
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -791,52 +1095,6 @@ def get_live_price(product_id):
         "urgency":          product.urgency_level,
         "stock":            product.stock,
     })
-
-
-# ═══════════════════════════════════════════════════════════════
-#  ROUTES — CUSTOMER
-# ═══════════════════════════════════════════════════════════════
-
-@app.route("/customer_dashboard")
-@login_required
-def customer_dashboard():
-    if current_user.role != "customer":
-        return redirect(url_for("home"))
-    now = datetime.now(timezone.utc)
-    products = Product.query.filter(
-        Product.deal_active == True,
-        Product.expiry_date > now,
-        Product.stock > 0,
-    ).order_by(Product.expiry_date.asc()).all()
-    return render_template("cust_dash.html", products=products)
-
-
-@app.route("/grab_deal/<int:product_id>", methods=["POST"])
-@login_required
-def grab_deal(product_id):
-    if current_user.role != "customer":
-        return redirect(url_for("home"))
-    product = db.session.get(Product, product_id)
-    if not product or product.stock <= 0 or product.is_expired or not product.deal_active:
-        flash("Sorry, this deal is no longer available!", "danger")
-        return redirect(url_for("customer_dashboard"))
-
-    selling_price = product.current_price   # freeze at grab time
-    product.stock -= 1
-    if product.stock == 0:
-        product.deal_active = False
-        push_notification(product.retailer_id,
-            f"✅ Sold Out: {product.name}",
-            "All units sold — deal auto-closed. Great work!",
-            ntype='deal')
-
-    db.session.add(Sale(
-        product_id=product.id, customer_id=current_user.id,
-        quantity_sold=1, selling_price=selling_price,
-    ))
-    db.session.commit()
-    flash(f"🎉 You got {product.name} for ₹{selling_price}!", "success")
-    return redirect(url_for("customer_dashboard"))
 
 
 # ═══════════════════════════════════════════════════════════════

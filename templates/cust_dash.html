@@ -14,6 +14,8 @@
     justify-content: space-between;
     align-items: flex-end;
     margin-bottom: 28px;
+    gap: 16px;
+    flex-wrap: wrap;
   }
 
   .customer-header h1 {
@@ -28,6 +30,14 @@
     color: #64748b;
     font-size: 14px;
     margin: 4px 0 0;
+  }
+
+  /* ── NEW: header right cluster ─────────────────────────────────────────── */
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
   }
 
   .live-badge {
@@ -57,6 +67,58 @@
     0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
     50% { opacity: 0.4; box-shadow: 0 0 0 4px rgba(34,197,94,0); }
   }
+
+  /* ── NEW: Set Location button ──────────────────────────────────────────── */
+  .btn-set-location {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(99,102,241,0.12);
+    border: 1px solid rgba(99,102,241,0.3);
+    color: #818cf8;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .btn-set-location:hover {
+    background: rgba(99,102,241,0.22);
+    border-color: rgba(99,102,241,0.5);
+    color: #a5b4fc;
+  }
+  /* When user has no location yet, highlight it more urgently */
+  .btn-set-location.no-location {
+    background: rgba(245,158,11,0.1);
+    border-color: rgba(245,158,11,0.35);
+    color: #fbbf24;
+    animation: pulse-btn 2.5s ease-in-out infinite;
+  }
+  @keyframes pulse-btn {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); }
+    50%       { box-shadow: 0 0 0 6px rgba(245,158,11,0.1); }
+  }
+
+  /* ── NEW: No-location callout banner ───────────────────────────────────── */
+  .location-callout {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: rgba(245,158,11,0.06);
+    border: 1px solid rgba(245,158,11,0.2);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 22px;
+    font-size: 13px;
+    color: #9ca3af;
+    line-height: 1.5;
+  }
+  .location-callout .lc-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .location-callout a { color: #fbbf24; font-weight: 700; text-decoration: none; }
+  .location-callout a:hover { text-decoration: underline; }
 
   /* Filter bar */
   .filter-bar {
@@ -108,13 +170,10 @@
   }
 
   /* Urgency top bar */
-  .urgency-bar {
-    height: 4px;
-    width: 100%;
-  }
-  .urgency-bar.low { background: #22c55e; }
-  .urgency-bar.medium { background: #f59e0b; }
-  .urgency-bar.high { background: #f97316; }
+  .urgency-bar { height: 4px; width: 100%; }
+  .urgency-bar.low      { background: #22c55e; }
+  .urgency-bar.medium   { background: #f59e0b; }
+  .urgency-bar.high     { background: #f97316; }
   .urgency-bar.critical { background: linear-gradient(90deg, #ef4444, #f97316); animation: urgency-pulse 1s infinite; }
 
   @keyframes urgency-pulse {
@@ -135,43 +194,29 @@
 
   .discount-chip {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 10px; right: 10px;
     background: #22c55e;
     color: #0a0f1e;
-    font-size: 11px;
-    font-weight: 800;
+    font-size: 11px; font-weight: 800;
     padding: 3px 9px;
     border-radius: 20px;
     letter-spacing: 0.5px;
   }
-
-  .discount-chip.critical-chip {
-    background: #ef4444;
-    color: white;
-    animation: urgency-pulse 1s infinite;
-  }
+  .discount-chip.critical-chip { background: #ef4444; color: white; animation: urgency-pulse 1s infinite; }
 
   .stock-chip {
     position: absolute;
-    top: 10px;
-    left: 10px;
+    top: 10px; left: 10px;
     background: rgba(0,0,0,0.7);
     color: #cbd5e1;
     font-size: 11px;
     padding: 3px 9px;
     border-radius: 20px;
   }
-
-  .stock-chip.critical-stock {
-    background: rgba(239,68,68,0.3);
-    color: #fca5a5;
-  }
+  .stock-chip.critical-stock { background: rgba(239,68,68,0.3); color: #fca5a5; }
 
   /* Card body */
-  .card-body-custom {
-    padding: 16px;
-  }
+  .card-body-custom { padding: 16px; }
 
   .card-category {
     font-size: 11px;
@@ -183,47 +228,62 @@
 
   .card-title {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 16px; font-weight: 700;
     color: #f1f5f9;
     margin-bottom: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
+  /* ── UPDATED: card-store now holds both store name and distance pill ───── */
   .card-store {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: 12px;
     color: #64748b;
     margin-bottom: 12px;
+    flex-wrap: wrap;
   }
 
+  /* ── NEW: distance pill ─────────────────────────────────────────────────── */
+  .dist-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(99,102,241,0.1);
+    border: 1px solid rgba(99,102,241,0.22);
+    color: #818cf8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+  }
+  /* Close distance (≤ 1 km) — green, so it reads as "super nearby" */
+  .dist-pill.close {
+    background: rgba(34,197,94,0.1);
+    border-color: rgba(34,197,94,0.25);
+    color: #22c55e;
+  }
+  /* No location data — muted */
+  .dist-pill.unknown {
+    background: transparent;
+    border-color: rgba(255,255,255,0.08);
+    color: #4b6584;
+    font-weight: 500;
+  }
+
+  /* Pricing row */
   .pricing-row {
     display: flex;
     align-items: baseline;
     gap: 8px;
     margin-bottom: 12px;
   }
-
-  .price-now {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 22px;
-    font-weight: 700;
-    color: #22c55e;
-  }
-
-  .price-was {
-    font-size: 13px;
-    color: #64748b;
-    text-decoration: line-through;
-  }
-
-  .savings-text {
-    font-size: 12px;
-    color: #22c55e;
-    margin-left: auto;
-    font-weight: 600;
-  }
+  .price-now  { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: #22c55e; }
+  .price-was  { font-size: 13px; color: #64748b; text-decoration: line-through; }
+  .savings-text { font-size: 12px; color: #22c55e; margin-left: auto; font-weight: 600; }
 
   /* Countdown timer */
   .countdown-box {
@@ -236,39 +296,11 @@
     justify-content: center;
     gap: 16px;
   }
-
-  .time-unit {
-    text-align: center;
-  }
-
-  .time-val {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 22px;
-    font-weight: 700;
-    color: #f1f5f9;
-    display: block;
-    line-height: 1;
-  }
-
-  .countdown-box.urgent .time-val {
-    color: #ef4444;
-  }
-
-  .time-label {
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #4b6584;
-    display: block;
-    margin-top: 2px;
-  }
-
-  .time-sep {
-    font-size: 20px;
-    color: #4b6584;
-    align-self: center;
-    padding-bottom: 6px;
-  }
+  .time-unit { text-align: center; }
+  .time-val  { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: #f1f5f9; display: block; line-height: 1; }
+  .countdown-box.urgent .time-val { color: #ef4444; }
+  .time-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #4b6584; display: block; margin-top: 2px; }
+  .time-sep   { font-size: 20px; color: #4b6584; align-self: center; padding-bottom: 6px; }
 
   /* Grab button */
   .btn-grab {
@@ -284,12 +316,7 @@
     transition: all 0.2s;
     letter-spacing: 0.5px;
   }
-
-  .btn-grab:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(34,197,94,0.3);
-  }
-
+  .btn-grab:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(34,197,94,0.3); }
   .btn-grab:active { transform: translateY(0); }
 
   /* Empty state */
@@ -299,10 +326,9 @@
     padding: 80px 20px;
     color: #4b6584;
   }
-
   .empty-deals .emoji { font-size: 56px; display: block; margin-bottom: 16px; }
   .empty-deals h3 { color: #64748b; font-size: 18px; }
-  .empty-deals p { font-size: 14px; }
+  .empty-deals p  { font-size: 14px; }
 
   /* Section label */
   .section-label {
@@ -315,13 +341,7 @@
     align-items: center;
     gap: 10px;
   }
-
-  .section-label::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: #1e2d40;
-  }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: #1e2d40; }
 
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap');
 </style>
@@ -337,14 +357,35 @@
     {% endif %}
   {% endwith %}
 
-  <!-- Header -->
+  <!-- ═══ HEADER ═══════════════════════════════════════════════════════════ -->
   <div class="customer-header">
     <div>
       <h1>⚡ Flash Deals Near You</h1>
-      <p>Hey {{ current_user.name }}! Grab these deals before they expire.</p>
+      <p>Hey {{ current_user.name }}! Deals sorted by relevance — discount, distance &amp; urgency.</p>
     </div>
-    <div class="live-badge">Live Deals</div>
+
+    <!-- ── NEW: right cluster — Live badge + Set Location button ── -->
+    <div class="header-right">
+      <div class="live-badge">Live Deals</div>
+      <a href="{{ url_for('update_location') }}"
+         class="btn-set-location {% if not user_has_location %}no-location{% endif %}">
+        📍 {% if user_has_location %}Update Location{% else %}Set My Location{% endif %}
+      </a>
+    </div>
   </div>
+
+  <!-- ── NEW: callout when customer has no coordinates yet ───────────────── -->
+  {% if not user_has_location %}
+  <div class="location-callout">
+    <span class="lc-icon">🗺️</span>
+    <div>
+      <strong style="color:#fbbf24;">Enable distance-based ranking</strong> —
+      deals are currently sorted by discount &amp; urgency only.
+      <a href="{{ url_for('update_location') }}">Set your location</a>
+      to see how far each store is and unlock fully personalised rankings.
+    </div>
+  </div>
+  {% endif %}
 
   <!-- Filter bar -->
   <div class="filter-bar">
@@ -362,7 +403,7 @@
   <div class="section-label">🔴 Expiring in under 6 hours</div>
   {% endif %}
 
-  <!-- Deal Grid -->
+  <!-- ═══ DEAL GRID ════════════════════════════════════════════════════════ -->
   <div class="deals-grid">
 
     {% if products %}
@@ -373,7 +414,7 @@
         'snacks': '🍿', 'personal_care': '🧴', 'household': '🏠',
         'electronics': '📱', 'clothing': '👕', 'other': '📦'
       } %}
-      {% set cat_emoji = emoji_map.get(p.category, '📦') %}
+      {% set cat_emoji = emoji_map.get(p.category|lower, '📦') %}
 
       <div class="deal-card">
         <div class="urgency-bar {{ p.urgency_level }}"></div>
@@ -392,7 +433,24 @@
         <div class="card-body-custom">
           <div class="card-category">{{ p.category }}</div>
           <div class="card-title">{{ p.name }}</div>
-          <div class="card-store">📍 {{ p.retailer.name }} · {{ p.retailer.city or 'Nearby' }}</div>
+
+          <!-- ── UPDATED: store row now includes distance pill ───────────── -->
+          <div class="card-store">
+            <span>📍 {{ p.retailer.name }}</span>
+
+            {% if p.distance_km is not none %}
+              {# Colour the pill based on proximity #}
+              {% if p.distance_km <= 1.0 %}
+                <span class="dist-pill close">{{ p.distance_km }} km</span>
+              {% else %}
+                <span class="dist-pill">{{ p.distance_km }} km away</span>
+              {% endif %}
+            {% else %}
+              {# No coordinates available — show city name as fallback #}
+              <span class="dist-pill unknown">{{ p.retailer.city or 'Nearby' }}</span>
+            {% endif %}
+          </div>
+          <!-- ─────────────────────────────────────────────────────────── -->
 
           <!-- Pricing -->
           <div class="pricing-row">
@@ -450,10 +508,10 @@
 
   function updateCountdowns() {
     document.querySelectorAll('.countdown-box[data-expiry]').forEach(box => {
-      const id = box.dataset.id;
+      const id     = box.dataset.id;
       const expiry = new Date(box.dataset.expiry + 'Z');  // treat as UTC
-      const now = new Date();
-      const diff = expiry - now;
+      const now    = new Date();
+      const diff   = expiry - now;
 
       if (diff <= 0) {
         document.getElementById('h-' + id).textContent = '00';
@@ -465,13 +523,12 @@
 
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
+      const s = Math.floor((diff % 60000)   / 1000);
 
       document.getElementById('h-' + id).textContent = pad(h);
       document.getElementById('m-' + id).textContent = pad(m);
       document.getElementById('s-' + id).textContent = pad(s);
 
-      // Make urgent if under 6 hours
       if (h < 6) box.classList.add('urgent');
     });
   }

@@ -1,0 +1,268 @@
+{% include "header.html" %}
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#07090f;--panel:#0c1018;--surface:#111827;--surface2:#161f30;
+  --border:rgba(255,255,255,0.055);--border2:rgba(255,255,255,0.09);
+  --amber:#f5a623;--amber-glow:rgba(245,166,35,0.15);
+  --green:#22d47a;--green-glow:rgba(34,212,122,0.12);
+  --red:#ff4d6a;--red-glow:rgba(255,77,106,0.12);
+  --blue:#4d9fff;--blue-glow:rgba(77,159,255,0.12);
+  --text:#dde3ed;--muted:#3d4f63;--sub:#6b7f96;
+  --sb-full:240px;--sb-mini:62px;
+  --radius-md:12px;--radius-lg:18px;
+  --trans:0.28s cubic-bezier(0.4,0,0.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);min-height:100vh;}
+
+.rd-shell{display:flex;min-height:calc(100vh - 80px);}
+
+/* Collapsible sidebar — same as dashboard */
+.rd-sidebar{width:var(--sb-mini);flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);padding:20px 10px 32px;display:flex;flex-direction:column;gap:4px;position:sticky;top:80px;height:calc(100vh - 80px);overflow:hidden;overflow-y:auto;transition:width var(--trans);z-index:100;}
+.rd-sidebar:hover{width:var(--sb-full);box-shadow:4px 0 28px rgba(0,0,0,0.4);}
+.rd-sidebar::-webkit-scrollbar{width:3px;}
+.rd-sidebar::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+.sb-brand{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;color:var(--amber);padding:0 4px 18px;border-bottom:1px solid var(--border);margin-bottom:10px;white-space:nowrap;overflow:hidden;}
+.sb-brand-icon{font-size:20px;flex-shrink:0;}
+.sb-brand-text{opacity:0;transition:opacity var(--trans);}
+.rd-sidebar:hover .sb-brand-text{opacity:1;}
+.sb-section{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:14px 4px 5px;white-space:nowrap;overflow:hidden;opacity:0;transition:opacity var(--trans);}
+.rd-sidebar:hover .sb-section{opacity:1;}
+.sb-link{display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--radius-md);color:var(--sub);text-decoration:none;font-size:14.5px;font-weight:600;transition:all 0.16s;border:1px solid transparent;white-space:nowrap;overflow:hidden;}
+.sb-link:hover{background:var(--surface);color:var(--text);border-color:var(--border);}
+.sb-link.active{background:var(--amber-glow);color:var(--amber);border-color:rgba(245,166,35,0.22);}
+.sb-icon{font-size:18px;width:24px;text-align:center;flex-shrink:0;}
+.sb-label-text{opacity:0;transition:opacity var(--trans);}
+.rd-sidebar:hover .sb-label-text{opacity:1;}
+.sb-divider{height:1px;background:var(--border);margin:8px 0;flex-shrink:0;}
+
+/* Main */
+.notif-main{flex:1;padding:32px 40px 60px;min-width:0;}
+
+.page-topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;gap:12px;flex-wrap:wrap;}
+.page-title{font-size:26px;font-weight:800;letter-spacing:-0.4px;}
+.page-sub{font-size:13px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:4px;}
+
+/* Controls */
+.notif-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+
+.btn-mark-all{display:inline-flex;align-items:center;gap:7px;background:var(--surface);color:var(--sub);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;padding:9px 18px;border-radius:var(--radius-md);border:1px solid var(--border2);cursor:pointer;transition:all 0.18s;}
+.btn-mark-all:hover{background:var(--surface2);color:var(--text);}
+
+/* Filter chips */
+.filter-row{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center;}
+.f-chip{font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 15px;border-radius:20px;border:1px solid var(--border2);background:var(--panel);color:var(--sub);cursor:pointer;transition:all 0.16s;user-select:none;}
+.f-chip:hover{color:var(--text);border-color:var(--border2);}
+.f-chip.active{background:var(--amber-glow);border-color:rgba(245,166,35,0.35);color:var(--amber);}
+.f-chip.fc-unread.active{background:var(--red-glow);border-color:rgba(255,77,106,0.3);color:var(--red);}
+.f-chip.fc-deal.active{background:var(--green-glow);border-color:rgba(34,212,122,0.3);color:var(--green);}
+.f-chip.fc-alert.active{background:var(--red-glow);border-color:rgba(255,77,106,0.3);color:var(--red);}
+.f-chip.fc-system.active{background:var(--blue-glow);border-color:rgba(77,159,255,0.3);color:var(--blue);}
+
+.sort-row{margin-left:auto;}
+.sort-sel{background:var(--panel);border:1px solid var(--border2);color:var(--sub);border-radius:10px;padding:7px 14px;font-family:'JetBrains Mono',monospace;font-size:11px;outline:none;cursor:pointer;}
+.sort-sel:focus{border-color:rgba(245,166,35,0.4);}
+
+/* Notification list */
+.notif-card-list{display:flex;flex-direction:column;gap:0;}
+
+.notif-card{
+  display:flex;align-items:flex-start;gap:14px;
+  padding:18px 20px;
+  background:var(--panel);
+  border-bottom:1px solid rgba(255,255,255,0.035);
+  cursor:pointer;transition:background 0.14s;
+  position:relative;
+}
+.notif-card:first-child{border-radius:var(--radius-lg) var(--radius-lg) 0 0;}
+.notif-card:last-child{border-bottom:none;border-radius:0 0 var(--radius-lg) var(--radius-lg);}
+.notif-card:only-child{border-radius:var(--radius-lg);}
+.notif-card:hover{background:rgba(255,255,255,0.02);}
+.notif-card.unread{background:rgba(245,166,35,0.04);}
+.notif-card.unread::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--amber);border-radius:0 2px 2px 0;}
+
+.notif-card-wrap{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;}
+
+.nc-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;margin-top:2px;}
+.nc-icon.alert{background:var(--red-glow);}
+.nc-icon.deal{background:var(--green-glow);}
+.nc-icon.system{background:var(--blue-glow);}
+
+.nc-body{flex:1;min-width:0;}
+.nc-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.nc-text{font-size:13px;color:var(--sub);line-height:1.5;}
+.nc-meta{display:flex;align-items:center;gap:10px;margin-top:7px;}
+.nc-time{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
+.nc-type-badge{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:20px;}
+.nc-type-badge.alert{background:var(--red-glow);color:var(--red);border:1px solid rgba(255,77,106,0.2);}
+.nc-type-badge.deal{background:var(--green-glow);color:var(--green);border:1px solid rgba(34,212,122,0.2);}
+.nc-type-badge.system{background:var(--blue-glow);color:var(--blue);border:1px solid rgba(77,159,255,0.2);}
+
+.nc-mark-read{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--amber);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:6px;transition:background 0.15s;flex-shrink:0;margin-top:2px;}
+.nc-mark-read:hover{background:rgba(245,166,35,0.1);}
+
+.notif-empty-full{padding:80px 20px;text-align:center;color:var(--muted);}
+.notif-empty-full span{font-size:48px;display:block;margin-bottom:16px;}
+.notif-empty-full h3{font-size:18px;color:var(--sub);margin-bottom:8px;}
+.notif-empty-full p{font-size:14px;}
+
+.loading-state{padding:60px 20px;text-align:center;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:13px;}
+
+@media(max-width:900px){.rd-sidebar{display:none;}.notif-main{padding:20px 16px;}}
+</style>
+
+<div class="rd-shell">
+  <aside class="rd-sidebar">
+    <div class="sb-brand">
+      <span class="sb-brand-icon">⚡</span>
+      <span class="sb-brand-text">DealDrop</span>
+    </div>
+    <div class="sb-section">Main</div>
+    <a href="{{ url_for('retailer_dashboard') }}" class="sb-link">
+      <span class="sb-icon">📊</span><span class="sb-label-text"> Dashboard</span>
+    </a>
+    <a href="{{ url_for('add_product') }}" class="sb-link">
+      <span class="sb-icon">📦</span><span class="sb-label-text"> Add Product</span>
+    </a>
+    <a href="{{ url_for('launch_deal') }}" class="sb-link">
+      <span class="sb-icon">🚀</span><span class="sb-label-text"> Launch Deal</span>
+    </a>
+    <a href="{{ url_for('sales_history') }}" class="sb-link">
+      <span class="sb-icon">📈</span><span class="sb-label-text"> Sales History</span>
+    </a>
+    <div class="sb-divider"></div>
+    <div class="sb-section">Account</div>
+    <a href="{{ url_for('logout') }}" class="sb-link">
+      <span class="sb-icon">🚪</span><span class="sb-label-text"> Logout</span>
+    </a>
+  </aside>
+
+  <main class="notif-main">
+
+    <div class="page-topbar">
+      <div>
+        <div class="page-title">🔔 All Notifications</div>
+        <div class="page-sub">Complete history — click any notification to mark it read</div>
+      </div>
+      <div class="notif-controls">
+        <button class="btn-mark-all" onclick="markAllReadFull()">✅ Mark All Read</button>
+        <a href="{{ url_for('retailer_dashboard') }}" class="btn-mark-all" style="text-decoration:none;color:var(--sub);">← Back</a>
+      </div>
+    </div>
+
+    <!-- Filter + Sort row -->
+    <div class="filter-row">
+      <span class="f-chip active"          data-f="all"    onclick="applyNotifFilter('all',this)">All</span>
+      <span class="f-chip fc-unread"       data-f="unread" onclick="applyNotifFilter('unread',this)">🔴 Unread</span>
+      <span class="f-chip fc-alert"        data-f="alert"  onclick="applyNotifFilter('alert',this)">⚠️ Alert</span>
+      <span class="f-chip fc-deal"         data-f="deal"   onclick="applyNotifFilter('deal',this)">⚡ Deal</span>
+      <span class="f-chip fc-system"       data-f="system" onclick="applyNotifFilter('system',this)">ℹ️ System</span>
+      <div class="sort-row">
+        <select class="sort-sel" id="notifSort" onchange="renderFiltered()">
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+          <option value="unread">Unread First</option>
+          <option value="type">Group by Type</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- List container -->
+    <div id="notifContainer">
+      <div class="loading-state">Loading notifications…</div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const NTYPE_ICON = { alert:'⚠️', deal:'⚡', system:'ℹ️' };
+let allNotifs = [];
+let activeFilter = 'all';
+
+async function loadAll() {
+  try {
+    // Fetch all (no limit) — reuse the same endpoint; it returns up to 20
+    const data = await (await fetch('/api/notifications')).json();
+    allNotifs = data;
+    renderFiltered();
+  } catch(e) {
+    document.getElementById('notifContainer').innerHTML =
+      '<div class="loading-state">Failed to load notifications.</div>';
+  }
+}
+
+function applyNotifFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.f-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderFiltered();
+}
+
+function renderFiltered() {
+  const sort = document.getElementById('notifSort').value;
+  let items = [...allNotifs];
+
+  // Filter
+  if (activeFilter === 'unread') items = items.filter(n => !n.read);
+  else if (activeFilter !== 'all') items = items.filter(n => n.ntype === activeFilter);
+
+  // Sort
+  if (sort === 'oldest')  items.sort((a,b) => a.id - b.id);
+  else if (sort === 'unread') items.sort((a,b) => (a.read ? 1 : 0) - (b.read ? 1 : 0));
+  else if (sort === 'type')   items.sort((a,b) => a.ntype.localeCompare(b.ntype));
+  else items.sort((a,b) => b.id - a.id); // newest
+
+  const container = document.getElementById('notifContainer');
+
+  if (!items.length) {
+    container.innerHTML = `
+      <div class="notif-empty-full">
+        <span>🎉</span>
+        <h3>No notifications here</h3>
+        <p>Try a different filter.</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = `<div class="notif-card-wrap">${items.map(n => `
+    <div class="notif-card ${n.read ? '' : 'unread'}" id="nc-${n.id}">
+      <div class="nc-icon ${n.ntype}">${NTYPE_ICON[n.ntype] || 'ℹ️'}</div>
+      <div class="nc-body">
+        <div class="nc-title">${n.title}</div>
+        <div class="nc-text">${n.body}</div>
+        <div class="nc-meta">
+          <span class="nc-time">${n.created_at}</span>
+          <span class="nc-type-badge ${n.ntype}">${n.ntype}</span>
+        </div>
+      </div>
+      ${!n.read ? `<button class="nc-mark-read" onclick="markOneFull(${n.id})">Mark read</button>` : ''}
+    </div>
+  `).join('')}</div>`;
+}
+
+async function markOneFull(id) {
+  await fetch('/api/notifications/mark_read', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({id})
+  });
+  const notif = allNotifs.find(n => n.id === id);
+  if (notif) notif.read = true;
+  renderFiltered();
+}
+
+async function markAllReadFull() {
+  await fetch('/api/notifications/mark_read', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({})
+  });
+  allNotifs.forEach(n => n.read = true);
+  renderFiltered();
+}
+
+loadAll();
+</script>
+
+{% include "footer.html" %}

@@ -25,7 +25,15 @@ class RegisterForm(FlaskForm):
     name     = StringField("Name",     validators=[DataRequired(), Length(min=2, max=50)])
     email    = StringField("Email",    validators=[DataRequired(), Email()])
     password = PasswordField("Password", validators=[DataRequired(), Length(min=6)])
-    city     = StringField("City",     validators=[DataRequired(), Length(min=2, max=100)])
+    # ── CHANGED: 'city' replaced with 'address' ──────────────────────────────
+    # Full address is geocoded once at registration to derive (lat, lon, city).
+    # Retailers: coordinates are fixed permanently after this point.
+    # Customers: can update later via /update_location.
+    address  = StringField(
+        "Full Address",
+        validators=[DataRequired(), Length(min=5, max=300)],
+        description="e.g. 'Anna Nagar, Chennai' or '14 MG Road, Bengaluru 560001'"
+    )
     submit   = SubmitField("Register")
 
 
@@ -33,6 +41,20 @@ class LoginForm(FlaskForm):
     email    = StringField("Email",    validators=[DataRequired(), Email()])
     password = PasswordField("Password", validators=[DataRequired()])
     submit   = SubmitField("Login")
+
+
+class UpdateAddressForm(FlaskForm):
+    """
+    Customer-only: update current location to receive better deal relevance scores.
+    Geocodes the supplied address and writes (lat, lon, city) to the User row.
+    NOTE: This form must NEVER be accessible to retailer accounts — enforced in the route.
+    """
+    address = StringField(
+        "Your Current Address / Area",
+        validators=[DataRequired(), Length(min=5, max=300)],
+        description="e.g. 'Koramangala, Bengaluru' or 'Bandra West, Mumbai 400050'"
+    )
+    submit  = SubmitField("📍 Update My Location")
 
 
 class AddProductForm(FlaskForm):
